@@ -49,7 +49,7 @@
 [7]通过模型测试：
    ncappzoo里面大部分模型都可运行，只有inception_v4模型，目前有些问题，注意:
   1）.tinyYolo:解析算法不是太准确,如果你有更好的解析代码，可以联系我：yuqj@deepano.com
-  2).ssd_mobilinet:解析算法不是太准确,如果你有更好的解析代码，可以联系我：yuqj@deepano.com
+  2).ssd_mobilinet:解析算法不是太准确,而且还有些bug，如果你有更好的解析代码，可以联系我：yuqj@deepano.com
   3).inception_v4:现在系统无法运行此模型
   后续我还会在继续研究解析算法，yolo和ssd一旦有更好的解析算法，我会持续更新的
 [8]注意：
