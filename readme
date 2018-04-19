@@ -5,6 +5,7 @@
    g++ -g -Wall -std=c++11 Fp16Convert.c interpret_output.cpp test.cpp -o test -I /usr/local/include -I /usr/local/include/libusb-1.0 -L /usr/local/lib -L /home/yu/Desktop/dp_api_custumer `pkg-config opencv --cflags --libs` -lpthread -lusb-1.0 -ldp_api
 调用方法：sudo ./dp_test [commond][options]  在主函数中有相关命令：例如打开摄像头：sudo  ./dp_test start_video
 [4]windows：可在vs2013,2015下编译，安装usb驱动的方法：访问http://zadig.akeo.ie，根据上面提示下载工具并安装驱动
+   windows端:目前由于加了测试样例还没有编译通过，需要再等等，稍后等新dll
 [5]本SDK相关API简介：
    1、typedef void(*dp_video_frame_cb_t)(dp_img_t *img, void *param);//接收从设备返回的视频流回调接口
    2、typedef void(*dp_first_blob_outresult_back_cb_t)(float * result,void *param);int dp_register_video_frame_cb(dp_video_frame_cb_t cb, void *param);//接收解析第一blob之后的原始结果的回调函数接口
