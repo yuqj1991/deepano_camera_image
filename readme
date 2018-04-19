@@ -1,0 +1,37 @@
+本套模组（ma2450）集有摄像头ov5658,可用于解析caffemodel的大部分算法模型，使用之前，需要使用ncsdk的转换工具，将caffemodel转化为mv模组可用的blob格式数据.
+linux下SDK中test.cpp下的编译步骤：
+g++ -g -Wall -std=c++11 Fp16Convert.c interpret_output.cpp test.cpp -o test -I /usr/local/include -I /usr/local/include/libusb-1.0 -L /usr/local/lib -L /home/yu/Desktop/dp_api_custumer `pkg-config opencv --cflags --libs` -lpthread -lusb-1.0 -ldp_api
+调用方法：sudo ./dp_test [commond][options]
+windows：可在vs2013,2015下编译，安装usb驱动的方法：访问http://zadig.akeo.ie，根据上面提示下载工具并安装驱动
+本SDK相关API简介：
+1、typedef void(*dp_video_frame_cb_t)(dp_img_t *img, void *param);//接收从设备返回的视频流回调接口
+2、typedef void(*dp_first_blob_outresult_back_cb_t)(float * result,void *param);int dp_register_video_frame_cb(dp_video_frame_cb_t cb, void *param);//接收解析第一blob之后的原始结果的回调函数接口
+3、typedef void(*dp_send_to_device_box_cb_t)(dp_image_box_t *box,void *param);//如果解析两个blob，则调用此回调函数，向设备端传输minibox坐标值
+4、typedef void(*dp_second_blob_outresult_back_cb_t)(void * result,void *param)；int dp_register_send_to_box_device_cb(dp_send_to_device_box_cb_t cb, void *param);//接收解析第二blob原始结果的回调函数接口
+5、EXTERN DLL int dp_set_blob_parms(int num_model,dp_blob_parm_t *param);//向设备端发送blob相关参数，注意，num_blob，表示向设备需要传输的个数
+6、EXTERN DLL int dp_update_model(const char* filename);//传输第一个blob
+7、EXTERN DLL int dp_update_model_2(const char* filename);//传输第二个blob
+8、EXTERN DLL int dp_start_camera_video();//打开摄像头获取视频流
+9、EXTERN DLL int dp_start_camera();//打开摄像头
+
+使用测试用例步骤：
+1-- cdk: 解析blob的一般步骤：
+开机->向设备端传输一个或两个blob的相关初始化参数->传输相应个数的blob->传输blob的mean和std(如果没有，则必须设mean为0,std为1,否则系统报错)->调用dp_start_camera()接口，设备端开始解析图像。
+（1）使用板子只解析一个blob，则可以借鉴test.cpp中的test_whole_model_1接口中的操作方法。
+（2）使用板子解析两个blob的时候，则可以借鉴test.cpp中的test_whole_model_2接口中的操作方法。
+（3）关于系统初始化过程中的一些参数说明：
+（4）dp_blob_parm_t
+{
+	int InputSize_width; //神经网络入口的图片尺寸
+	int InputSize_height;//神经网络入口的图片尺寸
+	int Output_num;//神经网络解析之后原始的数据长度，等于神经棒上mvnvGetResult()接口获取的原始数据长度;
+}
+（5）dp_image_box_t{
+   int x1;//box宽起始位
+   int x2;//box宽终止位
+   int y1;//box高起始位
+   int y2;//box高终止位
+}
+2--cdk:解析blob之后的原始数据结果为float数据类型，该数据的后续处理过程，可通过注册回调函数dp_register_box_device_cb(dp_first_blob_outresult_back_cb_t cb, void *param)进行相应处理
+相关命令在dp_type.h文件中
+ps:this version of cdk only run 8 shaves with blob,the other 4 shaves are used to image preprocessing. 
