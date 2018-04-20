@@ -151,27 +151,28 @@ void video_callback(dp_img_t *img, void *param)
 	cvtColor(myuv, bgr, CV_YUV2BGR_I420, 0);
 	DP_MODEL_NET model=*((DP_MODEL_NET*)param);
 	switch (model)
-    {
+       {
 	  case DP_TINI_YOLO_NET:
 	  {
-         for(int i=0;i<num_box_demo;i++)
-         {   
-           cv::rectangle(bgr,cvPoint(box_demo[i].x1,box_demo[i].y1),cvPoint(box_demo[i].x2,box_demo[i].y2),CV_RGB(0, 255, 0), 2);
-           cv::putText(bgr,categoles[i],cvPoint(box_demo[i].x1,box_demo[i].y1),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
-         }
-		 break;
+             for(int i=0;i<num_box_demo;i++)
+             {   
+               cv::rectangle(bgr,cvPoint(box_demo[i].x1,box_demo[i].y1),cvPoint(box_demo[i].x2,box_demo[i].y2),CV_RGB(0, 255, 0), 2);
+               cv::putText(bgr,categoles[i],cvPoint(box_demo[i].x1,box_demo[i].y1),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
+             }
+	     break;
 	  }
 	  case DP_SSD_MOBILI_NET:
 	  {
 	     for(int i=0;i<num_box_demo;i++)
-         {   
-           cv::rectangle(bgr,cvPoint(box_demo[i].x1,box_demo[i].y1),cvPoint(box_demo[i].x2,box_demo[i].y2),CV_RGB(0, 255, 0), 2);
-           cv::putText(bgr,categoles[i],cvPoint(box_demo[i].x1,box_demo[i].y1),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
-         }
-		 break;
+             {   
+                cv::rectangle(bgr,cvPoint(box_demo[i].x1,box_demo[i].y1),cvPoint(box_demo[i].x2,box_demo[i].y2),CV_RGB(0, 255, 0), 2);
+                cv::putText(bgr,categoles[i],cvPoint(box_demo[i].x1,box_demo[i].y1),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
+             }
+             break;
 	  }
-	  
-    }
+          default:
+	     break;	  
+      }
 	video_mutex.unlock();
 }
 
@@ -179,8 +180,8 @@ void test_start_video(int argc, char *argv[])
 {
 	int ret;
 	UNUSED(argv); UNUSED(argc);
-
-	dp_register_video_frame_cb(video_callback, NULL);
+        int param=15;
+	dp_register_video_frame_cb(video_callback, &param);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
