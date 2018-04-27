@@ -288,6 +288,13 @@ void test_get_frame(int argc, char *argv[])
 {
 	int ret;
 	dp_img_t img;
+        ret = dp_start_camera();
+	if (ret == 0) {
+		printf("Test dp_start_camera successfully!\n");
+	}
+	else {
+		printf("Test dp_start_camera failed! ret=%d\n", ret);
+	}
 	ret = dp_get_frame(&img);
 	if (ret == 0) {
 		printf("Test dp_capture_frame sucessfully!\n"
@@ -297,9 +304,9 @@ void test_get_frame(int argc, char *argv[])
 #ifdef SUPPORT_OPENCV
 		Mat myuv(img.height + img.height / 2, img.width, CV_8UC1, img.img);
 		cvtColor(myuv, bgr, CV_YUV2BGR_I420, 0);
-		imshow("DP_FRAME",myuv);
+		imshow("DP_FRAME",bgr);
 		waitKey(0);
-		destroyWindow("DP_FRAME");
+		//destroyWindow("DP_FRAME");
 #endif
 		dp_release_frame(&img);
 	}
@@ -836,7 +843,7 @@ void test_start_send_box_image()
 void test_whole_model_1_video_alexnet(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../alexnet.blob";//"/home/yu/tini_yolo.blob";
+	const char *filename = "../alexnet.blob";//"/home/yu/tini_yolo.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {0,227,227,1000*2};
         dp_netMean mean={104.0068,116.6886,122.6789,1};
@@ -914,7 +921,7 @@ void test_whole_model_1_video_alexnet(int argc, char *argv[])
 void test_whole_model_1_video_googleNet(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../google.blob";
+	const char *filename = "../google.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {0,224,224,1000*2};
         dp_netMean mean={104.0068,116.6886,122.6789,1};
@@ -991,7 +998,7 @@ void test_whole_model_1_video_googleNet(int argc, char *argv[])
 void test_whole_model_1_video_TinyYoloNet(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../tini_yolo.blob";
+	const char *filename = "../tini_yolo.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {0,448,448,1470*2};
         dp_netMean mean={0,0,0,255};
@@ -1043,7 +1050,7 @@ void test_whole_model_1_video_TinyYoloNet(int argc, char *argv[])
 void test_whole_model_1_video_AgeNet(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../agenet.blob";
+	const char *filename = "../agenet.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {0,227,227,8*2};
         dp_netMean mean={78.42633776,87.76891437,114.89584775,1};
@@ -1097,7 +1104,7 @@ void test_whole_model_1_video_AgeNet(int argc, char *argv[])
 void test_whole_model_1_video_gendernet(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../gendernet.blob";
+	const char *filename = "../gendernet.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {0,227,227,2*2};
         dp_netMean mean={78.42633776,87.76891437,114.89584775,1};
@@ -1152,7 +1159,7 @@ void test_whole_model_1_video_gendernet(int argc, char *argv[])
 void test_whole_model_1_video_Resnet_18(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../Resnet.blob";
+	const char *filename = "../Resnet.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {0,224,224,1000*2};
     dp_netMean mean={104.00698793,116.66876762,122.67891434,1};
@@ -1229,7 +1236,7 @@ void test_whole_model_1_video_Resnet_18(int argc, char *argv[])
 void test_whole_model_1_video_SqueezeNet(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../SqueezeNet.blob";
+	const char *filename = "../SqueezeNet.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {0,227,227,1000*2};
         dp_netMean mean={104.00698793,116.66876762,122.67891434,1};
@@ -1255,7 +1262,7 @@ void test_whole_model_1_video_SqueezeNet(int argc, char *argv[])
 		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
 	}
 
-	FILE *fp=fopen("../synset_words.txt","r");
+	FILE *fp=fopen("synset_words.txt","r");
     if(fp==NULL)
     {
      printf("can not open the file\n");
@@ -1308,7 +1315,7 @@ void test_whole_model_1_video_SqueezeNet(int argc, char *argv[])
 void test_whole_model_1_video_SSD_MobileNet(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../SSD_MobileNet.blob";
+	const char *filename = "../SSD_MobileNet.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {0,300,300,707*2};
     dp_netMean mean={127.5,127.5,127.5,127.5};
@@ -1361,7 +1368,7 @@ void test_whole_model_1_video_SSD_MobileNet(int argc, char *argv[])
 void test_whole_model_1_video_inception_v1(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../inception_v1";
+	const char *filename = "../inception_v1";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {1,223,223,1001*2};
     dp_netMean mean={128,128,128,128};
@@ -1430,7 +1437,7 @@ void test_whole_model_1_video_inception_v1(int argc, char *argv[])
 void test_whole_model_1_video_inception_v2(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../inception_v2";
+	const char *filename = "../inception_v2";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {1,224,224,1001*2};
     dp_netMean mean={128,128,128,128};
@@ -1500,7 +1507,7 @@ void test_whole_model_1_video_inception_v2(int argc, char *argv[])
 void test_whole_model_1_video_inception_v3(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../inception_v3";
+	const char *filename = "../inception_v3";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {1,299,299,1001*2};
     dp_netMean mean={128,128,128,128};
@@ -1570,7 +1577,7 @@ void test_whole_model_1_video_inception_v3(int argc, char *argv[])
 void test_whole_model_1_video_inception_v4(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../inception_v4";
+	const char *filename = "../inception_v4";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {1,299,299,1001*2};
     dp_netMean mean={128,128,128,128};
@@ -1639,7 +1646,7 @@ void test_whole_model_1_video_inception_v4(int argc, char *argv[])
 void test_whole_model_1_video_mnist(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../mnist_inference.graph";
+	const char *filename = "../mnist_inference.graph";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {1,28,28,10*2};
     dp_netMean mean={0,0,0,255};
@@ -1693,7 +1700,7 @@ void test_whole_model_1_video_mnist(int argc, char *argv[])
 void test_whole_model_1_video_mobilenets(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../mobilenets.blob";
+	const char *filename = "../mobilenets.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {1,224,224,1001*2};
     dp_netMean mean={0,0,0,255};
@@ -1769,8 +1776,8 @@ void test_whole_model_1_video_mobilenets(int argc, char *argv[])
 void test_whole_model_2_video_model(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../../tini_yolo.blob";
-	const char *filename2 = "../../google.blob";
+	const char *filename = "../tini_yolo.blob";
+	const char *filename2 = "../google.blob";
 
 	int blob_nums = 2; dp_blob_parm_t parms[2] = {{0,448,448,1470*2 },{0,224,224,1000*2}};
     dp_netMean mean[2]={{0,0,0,255},{104.0068,116.6886,122.6789,1}};
