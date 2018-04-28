@@ -58,4 +58,5 @@
   2).本套ma2450模组芯片，host端一旦终止，如果想要再次运行host端程序，需要重新插拔usb
   3).本套ma2450模组芯片，host端不可直接这样执行 sudo ./dp_test这样的命令,只能一次运行一个接口，例如：sudo ./dp_test test_whole_model_1_video_TinyYoloNet,否则会损坏固件
   4).本套ma2450模组芯片，device端图像前处理方法均为resize->yuv->rgb->fp16->bgr;因此本套所有模型的结果可能不会非常准确，如果客户有不同的图像前处理方式，需要单独定制
+  5).本套ma2450模组芯片, Blob_size_1<=150M,Blob_size_2<=85M
 

@@ -26,7 +26,6 @@ char categoles[100][20];
 int num_box_demo=0;
 std::mutex video_mutex;
 Mat bgr;
-static dp_image_box_t box={200,351,431,560};
 static int num_box=1;
 
 #define UNUSED(x) (void)(x)
@@ -347,7 +346,7 @@ void box_callback_model_two_demo(void *result,void *param)
 	          memcpy(categoles[i],result[i].category,20);
            }
 		 int box_demo_num=0;
-		 if(result_num<=2)
+		 if((result_num<=2)&&(result_num>0))
 		 {
 		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(result_num*sizeof(dp_image_box_t));
 
@@ -818,28 +817,6 @@ void box_callback_model_demo(void *result,void *param)
 
   return;
 }
-
-void test_send_image_box(int box_num,dp_image_box_t *box)
-{
-   int ret;
-   ret = dp_send_first_box_image(box_num,box);
-   if (ret == 0) {
-		printf("Test test_send_image_box sucessfully!\n");
-	}
-	else {
-		printf("Test test_send_image_box failed !\n");
-	}
-}
-
-void test_start_send_box_image()
-{
-   int ret;
-   dp_register_box_device_cb(box_callback_model_demo, NULL);
-   test_send_image_box(num_box,&box); 
-}
-
-
-
 void test_whole_model_1_video_alexnet(int argc, char *argv[])
 {
 	int ret;
