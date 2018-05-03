@@ -9,6 +9,8 @@
 #include "Fp16Convert.h"
 #include "mv_types.h"
 #include "interpret_output.h"
+#include "Common.h"
+#include "Region.h"
 #if defined _MSC_VER && defined _WIN64 || defined __linux__
 #define SUPPORT_OPENCV
 #endif
@@ -47,6 +49,7 @@ typedef enum NET_CAFFE_TENSFLOW
    DP_INCEPTION_V3,
    DP_INCEPTION_V4,
    DP_MOBILINERS_NET,
+   DP_TINY_YOLO_V2_NET,
 } DP_MODEL_NET;
 
 typedef void(*test_case_fun_t)(int argc, char *argv[]);
@@ -168,6 +171,15 @@ void video_callback(dp_img_t *img, void *param)
                 cv::putText(bgr,categoles[i],cvPoint(box_demo[i].x1,box_demo[i].y1),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
              }
              break;
+	  }
+	  case DP_TINY_YOLO_V2_NET:
+	  {
+             for(int i=0;i<num_box_demo;i++)
+             {   
+               cv::rectangle(bgr,cvPoint(box_demo[i].x1,box_demo[i].y1),cvPoint(box_demo[i].x2,box_demo[i].y2),CV_RGB(0, 255, 0), 2);
+               cv::putText(bgr,categoles[i],cvPoint(box_demo[i].x1,box_demo[i].y1),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
+             }
+	     break;
 	  }
           default:
 	     break;	  
@@ -400,7 +412,16 @@ void box_callback_model_two_demo(void *result,void *param)
 		break;
   }
 }
-
+void reshape(float *data, float *new_data,int length_data)
+{
+   for(int i=0;i<125;i++)
+   {
+      for(int m=0;m<144;m++)
+      {
+         new_data[i*144+m]=data[m*125+i];
+      }
+   }
+}
 
 
 
@@ -563,6 +584,47 @@ void box_callback_model_demo(void *result,void *param)
 		 }
 		 free(resultfp32);
 	     break;
+	  }
+	  case DP_TINY_YOLO_V2_NET:
+	  {
+	     u16* probabilities = (u16*)result;
+             unsigned int resultlen=18000;
+             std::vector<DetectedObject> results;
+             int result_num=0;
+             float* resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+             float* new_data=(float*)malloc(resultlen * sizeof(*new_data));
+             int img_width=1280;
+             int img_height=960;
+             for (u32 i = 0; i < resultlen; i++)
+               resultfp32[i]= f16Tof32(probabilities[i]);
+             reshape(resultfp32, new_data,resultlen);
+             int dim[2] ={416,416};
+             int blockwd = 12;
+             int wh =blockwd*blockwd;
+             int targetBlockwd = 13;
+             int classes = 20;
+             float threshold = 0.25;
+             float nms = 0.4;
+             Region region_obj;
+	     region_obj.GetDetections(new_data,125,blockwd,blockwd,classes,img_width,img_height,threshold,nms,targetBlockwd,results);
+             num_box_demo= results.size();
+             printf("results.size():%d\n",results.size());
+             for (int i = 0; i <  results.size(); ++i)
+             { 
+               printf("class:%s, x:%d, y:%d, width:%d, height:%d, probability:%.2f.\n",results[i].name.c_str(),results[i].left,results[i].top,(results[i].right-results[i].left),(results[i].bottom-results[i].top),results[i].confidence);
+               box_demo[i].x1=results[i].left;
+               box_demo[i].x2=results[i].right;
+	       if(box_demo[i].x2>img_width)
+	 	     box_demo[i].x2=img_width;
+               box_demo[i].y1=results[i].top;
+               box_demo[i].y2=results[i].bottom;
+	       if(box_demo[i].y2>img_height)
+	 	      box_demo[i].y2=img_height;
+	       results[i].name.copy(categoles[i],20, 0);
+            }
+            free(resultfp32);
+            free(new_data);	 
+	    break;
 	  }
 	  case DP_TINI_YOLO_NET:
 	  {
@@ -817,6 +879,61 @@ void box_callback_model_demo(void *result,void *param)
 
   return;
 }
+
+void test_whole_model_1_video_tiny_yolo_v2(int argc, char *argv[])
+{
+	int ret;
+	const char *filename = "../TINY_YOLO_V2.Blob";//"/home/yu/tini_yolo.blob";
+
+	int blob_nums = 1; dp_blob_parm_t parms = {0,416,416,18000*2};
+        dp_netMean mean={0,0,0,255};
+	if (argc > 0)
+	{
+		filename = argv[0];
+		blob_nums = atoi(argv[1]);
+		for (int i = 0; i<blob_nums; i++)
+		{
+			parms.InputSize_height = atoi(argv[i * 3 + 2 + 0]);
+			parms.InputSize_width = atoi(argv[i * 3 + 2 + 1]);
+			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
+		}
+	}
+
+	test_update_model_parems(blob_nums, &parms);
+        dp_set_blob_mean_std(blob_nums,&mean);
+	ret = dp_update_model(filename);
+	if (ret == 0) {
+		printf("Test dp_update_model(%s) sucessfully!\n", filename);
+	}
+	else {
+		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
+	}	
+	DP_MODEL_NET net=DP_TINY_YOLO_V2_NET;
+	dp_register_video_frame_cb(video_callback, &net);
+	dp_register_box_device_cb(box_callback_model_demo,&net);
+	ret = dp_start_camera_video();
+	if (ret == 0) {
+		printf("Test test_start_video successfully!\n");
+	}
+	else {
+		printf("Test test_start_video failed! ret=%d\n", ret);
+	}
+
+	const char *win_name = "video";
+	namedWindow(win_name);
+	int key = -1;
+	for (;;) {
+		video_mutex.lock();
+		if (!bgr.empty())
+			imshow(win_name, bgr);
+		video_mutex.unlock();
+		key = waitKey(30);
+	}
+	destroyWindow(win_name);
+}
+
+
+
 void test_whole_model_1_video_alexnet(int argc, char *argv[])
 {
 	int ret;
@@ -1856,6 +1973,7 @@ testcase_t g_testcases[] =
     {"test_whole_model_1_video_inception_v1","test_whole_model_1_video_inception_v1",test_whole_model_1_video_inception_v1},
     {"test_whole_model_1_video_mobilenets","test_whole_model_1_video_mobilenets",test_whole_model_1_video_mobilenets},
     {"test_whole_model_2_video_model","test_whole_model_2_video_model",test_whole_model_2_video_model},
+    {"test_whole_model_1_video_tiny_yolo_v2","test_whole_model_1_video_tiny_yolo_v2",test_whole_model_1_video_tiny_yolo_v2},
 };
 int g_case_count = sizeof(g_testcases) / sizeof(testcase_t);
 

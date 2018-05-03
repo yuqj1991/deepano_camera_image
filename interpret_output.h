@@ -12,7 +12,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
-#include <strings.h>
+//#include <strings.h>
 #include <string.h>
 #include "mv_types.h"
 #include <assert.h>
@@ -61,9 +61,10 @@ extern "C" {
 #endif
 void fp16tofloat(float *dst, unsigned char *src, unsigned nelem);
 void interpret_output(float *original_out, YOLO_Result *result, int * result_num, int img_width, int img_height,float threshold);
+#if 0
 void filter_object(float *original_out,int img_width, int img_height,float threshold,YOLO_result_org *result,int result_num);
 void display_image(YOLO_result_org *result,int img_width, int img_height,YOLO_Result *result_image,int result_num);
-
+#endif
 #ifdef __cplusplus
 }
 #endif

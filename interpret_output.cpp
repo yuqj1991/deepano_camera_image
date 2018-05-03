@@ -242,7 +242,7 @@ void interpret_output(float *original_out, YOLO_Result *result, int * result_num
 
 //new parse bloboutput alghtorightm
 
-
+#if 0
 void boxes_to_pixel_units(float *all_boxes,int img_width, int img_height,int grid_size)
 {
    int boxes_per_cell = 2;
@@ -615,4 +615,4 @@ void display_image(YOLO_result_org *result,int img_width, int img_height,YOLO_Re
     }
 }
 
-
+#endif
