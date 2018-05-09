@@ -2161,7 +2161,7 @@ void test_whole_model_1_video_jieshang(int argc, char *argv[])
 }
 
 
-void test_whole_model_1_video_face_ali(int argc, char *argv[])
+void test_whole_model_1_video_face(int argc, char *argv[])
 {
 	int ret;
 	const char *filename = "../mvoutput.graph";
@@ -2250,7 +2250,7 @@ testcase_t g_testcases[] =
     {"test_whole_model_2_video_model","test_whole_model_2_video_model",test_whole_model_2_video_model},
     {"test_whole_model_1_video_tiny_yolo_v2","test_whole_model_1_video_tiny_yolo_v2",test_whole_model_1_video_tiny_yolo_v2},
     {"test_whole_model_1_video_jieshang","test_whole_model_1_video_jieshang",test_whole_model_1_video_jieshang},
-    {"test_whole_model_1_video_face_ali","test_whole_model_1_video_face_ali",test_whole_model_1_video_face_ali},
+    {"test_whole_model_1_video_face","test_whole_model_1_video_face",test_whole_model_1_video_face},
     {"test_whole_model_2_video_model_jingdong","test_whole_model_2_video_model_jingdong",test_whole_model_2_video_model_jingdong}
 };
 int g_case_count = sizeof(g_testcases) / sizeof(testcase_t);
