@@ -42,6 +42,8 @@ typedef void(*dp_video_frame_cb_t)(dp_img_t *img, void *param);
 */
 typedef void(*dp_first_blob_outresult_back_cb_t)(void * result,void *param);
 
+typedef void(*dp_get_fps_cb_t)(int32_t *fps,void *param);
+
 typedef void(*dp_second_blob_outresult_back_cb_t)(void * result,void *param);
 
 /** \ingroup dp_first_blob_out_back_cb_t
@@ -131,6 +133,9 @@ EXTERN DLL int dp_register_video_frame_cb(dp_video_frame_cb_t cb, void *param);
 *
 * \returns 0 if sucess, <0 if error occured.
 */
+
+EXTERN DLL int dp_register_fps_device_cb(dp_get_fps_cb_t cb, void *param);
+
 EXTERN DLL int dp_register_box_device_cb(dp_first_blob_outresult_back_cb_t cb, void *param);
 
 EXTERN DLL int dp_register_second_box_device_cb(dp_second_blob_outresult_back_cb_t cb, void *param);
@@ -204,5 +209,7 @@ EXTERN DLL int dp_get_frame(dp_img_t* img);
 * \returns 0 if sucess, <0 if error occured.
 */
 EXTERN DLL int dp_release_frame(dp_img_t* img);
+
+
 
 #endif

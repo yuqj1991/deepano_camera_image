@@ -3,7 +3,7 @@
 [2]测试model：百度云网盘：https://pan.baidu.com/s/1MRcn-zUrNeOsM5j1-MGWoQ
    密码：66wq
 [3]linux下SDK中test.cpp下的编译步骤：
-   g++ -g -Wall -std=c++11 Fp16Convert.c interpret_output.cpp test.cpp -o test -I /usr/local/include -I /usr/local/include/libusb-1.0 -L /usr/local/lib -L /home/wlf/Deepano_SDK_AND_EXAMPLES `pkg-config opencv --cflags --libs` -lpthread -lusb-1.0 -ldp_api
+   g++ -g -Wall -std=c++11 Fp16Convert.c interpret_output.cpp test.cpp -o test -I /usr/local/include -I /usr/local/include/libusb-1.0 -L /usr/local/lib -L /home/yu/Deepano_SDK_AND_EXAMPLES `pkg-config opencv --cflags --libs` -lpthread -lusb-1.0 -ldp_api
 调用方法：sudo ./dp_test [commond][options]  在主函数中有相关命令：例如打开摄像头：sudo  ./dp_test start_video
 [4]windows：可在vs2013,2015下编译，安装usb驱动的方法：访问http://zadig.akeo.ie，根据上面提示下载工具并安装驱动
    本套sdk附带的demo_model,目前只能在ubuntu16.04下使用，windows下没有集成开发，但是本套sdk提供了windows版本的dll和lib，是可以在windows下vs里面使用的.

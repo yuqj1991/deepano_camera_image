@@ -30,6 +30,8 @@ std::mutex video_mutex;
 Mat bgr;
 static int num_box=1;
 
+int32_t fps;
+
 #define UNUSED(x) (void)(x)
 
 
@@ -49,7 +51,9 @@ typedef enum NET_CAFFE_TENSFLOW
    DP_INCEPTION_V3,
    DP_INCEPTION_V4,
    DP_MOBILINERS_NET,
+   DP_ALI_FACENET,
    DP_TINY_YOLO_V2_NET,
+   DP_CAFFE_NET,
 } DP_MODEL_NET;
 
 typedef void(*test_case_fun_t)(int argc, char *argv[]);
@@ -146,6 +150,15 @@ void test_update_model_parems(int blob_nums,dp_blob_parm_t*parmes)
   	printf("parems transfer failed\n");
 }
 
+
+
+void fps_callback(int32_t *buffer_fps,void *param)
+{
+  //int *buffer=(int *)buffer_fps;
+  fps=*(buffer_fps);
+  printf("fps--:%d\n",fps);
+}
+
 void video_callback(dp_img_t *img, void *param)
 {
 	Mat myuv(img->height + img->height / 2, img->width, CV_8UC1, img->img);
@@ -160,7 +173,10 @@ void video_callback(dp_img_t *img, void *param)
              {   
                cv::rectangle(bgr,cvPoint(box_demo[i].x1,box_demo[i].y1),cvPoint(box_demo[i].x2,box_demo[i].y2),CV_RGB(0, 255, 0), 2);
                cv::putText(bgr,categoles[i],cvPoint(box_demo[i].x1,box_demo[i].y1),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
+               
              }
+             string buffer="fps:"+std::to_string(fps);
+             cv::putText(bgr,buffer.c_str(),cvPoint(40,40),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
 	     break;
 	  }
 	  case DP_SSD_MOBILI_NET:
@@ -170,19 +186,16 @@ void video_callback(dp_img_t *img, void *param)
                 cv::rectangle(bgr,cvPoint(box_demo[i].x1,box_demo[i].y1),cvPoint(box_demo[i].x2,box_demo[i].y2),CV_RGB(0, 255, 0), 2);
                 cv::putText(bgr,categoles[i],cvPoint(box_demo[i].x1,box_demo[i].y1),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
              }
+                string buffer="fps:"+std::to_string(fps);
+                cv::putText(bgr,buffer.c_str(),cvPoint(40,40),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
              break;
 	  }
-	  case DP_TINY_YOLO_V2_NET:
-	  {
-             for(int i=0;i<num_box_demo;i++)
-             {   
-               cv::rectangle(bgr,cvPoint(box_demo[i].x1,box_demo[i].y1),cvPoint(box_demo[i].x2,box_demo[i].y2),CV_RGB(0, 255, 0), 2);
-               cv::putText(bgr,categoles[i],cvPoint(box_demo[i].x1,box_demo[i].y1),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
-             }
-	     break;
-	  }
           default:
-	     break;	  
+          {
+               string buffer="fps:"+std::to_string(fps);
+               cv::putText(bgr,buffer.c_str(),cvPoint(40,40),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
+	     break;
+          }	  
       }
 	video_mutex.unlock();
 }
@@ -280,20 +293,6 @@ void test_get_camera_config(int argc, char *argv[])
 		printf("Test dp_get_camera_config failed! ret=%d\n", ret);
 	}
 }
-void test_update_firmware(int argc, char *argv[])
-{
-	int ret;
-	const char *filename = "dp_api.dll";
-	if (argc > 0)
-		filename = argv[0];
-	ret = dp_update_firmware(filename);
-	if (ret == 0) {
-		printf("Test dp_update_firmware(%s) sucessfully!\n", filename);
-	}
-	else {
-		printf("Test dp_update_firmware(%s) failed ! ret=%d\n", filename, ret);
-	}
-}
 
 void test_get_frame(int argc, char *argv[])
 {
@@ -325,6 +324,18 @@ void test_get_frame(int argc, char *argv[])
 		printf("Test dp_capture_frame failed ! ret=%d\n", ret);
 	}
 }
+
+void reshape(float *data, float *new_data,int length_data)
+{
+   for(int i=0;i<125;i++)
+   {
+      for(int m=0;m<144;m++)
+      {
+         new_data[i*144+m]=data[m*125+i];
+      }
+   }
+}
+
 void box_callback_model_two_demo(void *result,void *param)
 {
   DP_MODEL_NET model=*((DP_MODEL_NET*)param);
@@ -408,19 +419,89 @@ void box_callback_model_two_demo(void *result,void *param)
         free(resultfp32);
 		break;
     }
+	case DP_SSD_MOBILI_NET:
+	{
+	     char *category[]={"background","aeroplane","bicycle","bird","boat","bottle","bus","car","cat","chair","cow","diningtable",
+              "dog","horse","motorbike","person","pottedplant","sheep","sofa","train","tvmonitor"};
+		 u16* probabilities = (u16*)result;
+         unsigned int resultlen=707;
+         float*resultfp32;
+         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+         int img_width=1280;
+         int img_height=960;
+         for (u32 i = 0; i < resultlen; i++)
+            resultfp32[i]= f16Tof32(probabilities[i]);
+         int num_valid_boxes=int(resultfp32[0]);
+		 printf("num_valid_bxes:%d\n",num_valid_boxes);
+		 for(int box_index=0;box_index<num_valid_boxes;box_index++)
+		 {
+		   int base_index=7*box_index+7;
+		  if(resultfp32[base_index+6]<0||resultfp32[base_index+6]>=1||resultfp32[base_index+5]<0||resultfp32[base_index+5]>=1||resultfp32[base_index+4]<0||resultfp32[base_index+4]>=1||resultfp32[base_index+3]<0||resultfp32[base_index+3]>=1||resultfp32[base_index+2]>=1||resultfp32[base_index+2]<0||resultfp32[base_index+1]<0)
+		   {
+		   	   continue;
+		   }
+		   printf("%d %f %f %f %f %f\n",int(resultfp32[base_index+1]),resultfp32[base_index+2],resultfp32[base_index+3],resultfp32[base_index+4],resultfp32[base_index+5],resultfp32[base_index+6]);
+		   box_demo[num_box_demo].x1=(int(resultfp32[base_index+3]*img_width)>0)?int(resultfp32[base_index+3]*img_width):0;
+		   box_demo[num_box_demo].x2=(int(resultfp32[base_index+5]*img_width)<img_width)?int(resultfp32[base_index+5]*img_width):img_width;
+		   box_demo[num_box_demo].y1=(int(resultfp32[base_index+4]*img_height)>0)?int(resultfp32[base_index+4]*img_height):0;	   
+		   box_demo[num_box_demo].y2=(int(resultfp32[base_index+6]*img_height)<img_height)?int(resultfp32[base_index+6]*img_height):img_height;
+		   memcpy(categoles[num_box_demo],category[int(resultfp32[base_index+1])],20);
+		   num_box_demo++;
+		 }
+         int box_demo_num=0;
+		 if((num_valid_boxes<=2)&&(num_valid_boxes>0))
+		 {
+		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(num_valid_boxes*sizeof(dp_image_box_t));
+
+		   for (int i = 0; i < num_valid_boxes; ++i)
+           { 
+			  if(((box_demo[i].x2-box_demo[i].x1)!=0)&&((box_demo[i].y2-box_demo[i].y1)!=0))
+			  {
+			     box_second[box_demo_num].x1=box_demo[i].x1;
+			     box_second[box_demo_num].x2=box_demo[i].x2;
+				 if(box_second[box_demo_num].x2>img_width)
+				 	 box_second[box_demo_num].x2=img_width;
+			     box_second[box_demo_num].y1=box_demo[i].y1;	  
+			     box_second[box_demo_num].y2=box_demo[i].y2;
+				 if(box_second[box_demo_num].y2>img_height)
+				 	box_second[box_demo_num].y2=img_height;
+				 box_demo_num++;
+			  } 
+           }
+		   dp_send_first_box_image(box_demo_num, box_second);
+		   free(box_second);
+		 }
+		 else if(num_valid_boxes>2)
+		 { 
+		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(2*sizeof(dp_image_box_t));
+		   for(int i=0;i<num_valid_boxes;i++)
+		   {
+		     if(((box_demo[i].x2-box_demo[i].x1)!=0)&&((box_demo[i].y2-box_demo[i].y1)!=0))
+			  {
+			     box_second[box_demo_num].x1=box_demo[i].x1;
+			     box_second[box_demo_num].x2=box_demo[i].x2;
+				 if(box_second[box_demo_num].x2>img_width)
+				 	 box_second[box_demo_num].x2=img_width;
+			     box_second[box_demo_num].y1=box_demo[i].y1;	  
+			     box_second[box_demo_num].y2=box_demo[i].y2;
+				 if(box_second[box_demo_num].y2>img_height)
+				 	box_second[box_demo_num].y2=img_height;
+				 box_demo_num++;
+			  } 
+			  if(box_demo_num==2)
+			  {
+			     break;
+			  }
+		   	}
+		   dp_send_first_box_image(2, box_second);		   
+		   free(box_second);
+		 }         
+        free(resultfp32);
+		break;
+	  }
 	default:
 		break;
   }
-}
-void reshape(float *data, float *new_data,int length_data)
-{
-   for(int i=0;i<125;i++)
-   {
-      for(int m=0;m<144;m++)
-      {
-         new_data[i*144+m]=data[m*125+i];
-      }
-   }
 }
 
 
@@ -584,47 +665,6 @@ void box_callback_model_demo(void *result,void *param)
 		 }
 		 free(resultfp32);
 	     break;
-	  }
-	  case DP_TINY_YOLO_V2_NET:
-	  {
-	     u16* probabilities = (u16*)result;
-             unsigned int resultlen=18000;
-             std::vector<DetectedObject> results;
-             int result_num=0;
-             float* resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-             float* new_data=(float*)malloc(resultlen * sizeof(*new_data));
-             int img_width=1280;
-             int img_height=960;
-             for (u32 i = 0; i < resultlen; i++)
-               resultfp32[i]= f16Tof32(probabilities[i]);
-             reshape(resultfp32, new_data,resultlen);
-             int dim[2] ={416,416};
-             int blockwd = 12;
-             int wh =blockwd*blockwd;
-             int targetBlockwd = 13;
-             int classes = 20;
-             float threshold = 0.25;
-             float nms = 0.4;
-             Region region_obj;
-	     region_obj.GetDetections(new_data,125,blockwd,blockwd,classes,img_width,img_height,threshold,nms,targetBlockwd,results);
-             num_box_demo= results.size();
-             printf("results.size():%d\n",results.size());
-             for (int i = 0; i <  results.size(); ++i)
-             { 
-               printf("class:%s, x:%d, y:%d, width:%d, height:%d, probability:%.2f.\n",results[i].name.c_str(),results[i].left,results[i].top,(results[i].right-results[i].left),(results[i].bottom-results[i].top),results[i].confidence);
-               box_demo[i].x1=results[i].left;
-               box_demo[i].x2=results[i].right;
-	       if(box_demo[i].x2>img_width)
-	 	     box_demo[i].x2=img_width;
-               box_demo[i].y1=results[i].top;
-               box_demo[i].y2=results[i].bottom;
-	       if(box_demo[i].y2>img_height)
-	 	      box_demo[i].y2=img_height;
-	       results[i].name.copy(categoles[i],20, 0);
-            }
-            free(resultfp32);
-            free(new_data);	 
-	    break;
 	  }
 	  case DP_TINI_YOLO_NET:
 	  {
@@ -875,42 +915,113 @@ void box_callback_model_demo(void *result,void *param)
          free(resultfp32);
 		 break;
 	  }
+              case DP_ALI_FACENET:
+          {
+                u16* probabilities = (u16*)result;
+         unsigned int resultlen=80*80;
+         float*resultfp32;
+         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+         int img_width=1280;
+         int img_height=960;
+         for (u32 i = 0; i < resultlen; i++)
+            resultfp32[i]= f16Tof32(probabilities[i]);
+         /*
+         *add your code with resultfp32
+          */
+          free(resultfp32);
+		 break;
+          }
+          case DP_TINY_YOLO_V2_NET:
+	  {
+	     u16* probabilities = (u16*)result;
+             unsigned int resultlen=18000;
+             std::vector<DetectedObject> results;
+             int result_num=0;
+             float* resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+             float* new_data=(float*)malloc(resultlen * sizeof(*new_data));
+             int img_width=1280;
+             int img_height=960;
+             for (u32 i = 0; i < resultlen; i++)
+               resultfp32[i]= f16Tof32(probabilities[i]);
+             reshape(resultfp32, new_data,resultlen);
+             int dim[2] ={416,416};
+             int blockwd = 12;
+             int wh =blockwd*blockwd;
+             int targetBlockwd = 13;
+             int classes = 20;
+             float threshold = 0.25;
+             float nms = 0.4;
+             Region region_obj;
+	     region_obj.GetDetections(new_data,125,blockwd,blockwd,classes,img_width,img_height,threshold,nms,targetBlockwd,results);
+             num_box_demo= results.size();
+             printf("results.size():%d\n",results.size());
+             for (int i = 0; i <  results.size(); ++i)
+             { 
+               printf("class:%s, x:%d, y:%d, width:%d, height:%d, probability:%.2f.\n",results[i].name.c_str(),results[i].left,results[i].top,(results[i].right-results[i].left),(results[i].bottom-results[i].top),results[i].confidence);
+               box_demo[i].x1=results[i].left;
+               box_demo[i].x2=results[i].right;
+	       if(box_demo[i].x2>img_width)
+	 	     box_demo[i].x2=img_width;
+               box_demo[i].y1=results[i].top;
+               box_demo[i].y2=results[i].bottom;
+	       if(box_demo[i].y2>img_height)
+	 	      box_demo[i].y2=img_height;
+	       results[i].name.copy(categoles[i],20, 0);
+            }
+            free(resultfp32);
+            free(new_data);	 
+	    break;
+}
+ case DP_CAFFE_NET:
+	  {
+		 u16* probabilities=(u16*)result;
+		 unsigned int resultlen=128;
+		 float *resultfp32=(float *)malloc(resultlen*sizeof(*resultfp32));
+		 for(u32 i=0;i<resultlen;i++)
+			resultfp32[i]=f16Tof32(probabilities[i]);
+		 /**
+		 add your own code to do with resultfp32
+         **/
+		 
+		 free(resultfp32);
+		 break;
+}
   }
 
   return;
 }
 
-void test_whole_model_1_video_tiny_yolo_v2(int argc, char *argv[])
+void test_whole_model_2_video_model_jingdong(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../TINY_YOLO_V2.Blob";//"/home/yu/tini_yolo.blob";
+	const char *filename = "../mobilenetssd.blob";
+	const char *filename2 = "../caffenet.blob";
 
-	int blob_nums = 1; dp_blob_parm_t parms = {0,416,416,18000*2};
-        dp_netMean mean={0,0,0,255};
-	if (argc > 0)
-	{
-		filename = argv[0];
-		blob_nums = atoi(argv[1]);
-		for (int i = 0; i<blob_nums; i++)
-		{
-			parms.InputSize_height = atoi(argv[i * 3 + 2 + 0]);
-			parms.InputSize_width = atoi(argv[i * 3 + 2 + 1]);
-			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
-		}
-	}
+	int blob_nums = 2; dp_blob_parm_t parms[2] = {{0,128,128,707*2 },{0,114,114,128*2}};
+        dp_netMean mean[2]={{127.5,127.5,127.5,127.5},{104,117,123,255}};
 
-	test_update_model_parems(blob_nums, &parms);
-        dp_set_blob_mean_std(blob_nums,&mean);
+	test_update_model_parems(blob_nums, parms);
+        dp_set_blob_mean_std(blob_nums,mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
 	}
 	else {
 		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
-	}	
-	DP_MODEL_NET net=DP_TINY_YOLO_V2_NET;
-	dp_register_video_frame_cb(video_callback, &net);
-	dp_register_box_device_cb(box_callback_model_demo,&net);
+	}
+	ret = dp_update_model_2(filename2);
+	if (ret == 0) {
+		printf("Test dp_update_model_2(%s) sucessfully!\n", filename2);
+	}
+	else {
+		printf("Test dp_update_model_2(%s) failed ! ret=%d\n", filename2, ret);
+	}
+
+	DP_MODEL_NET net_1=DP_SSD_MOBILI_NET;
+	dp_register_box_device_cb(box_callback_model_two_demo, &net_1);	
+	DP_MODEL_NET net_2=DP_CAFFE_NET;
+	dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
+	dp_register_video_frame_cb(video_callback, &net_1);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -922,7 +1033,7 @@ void test_whole_model_1_video_tiny_yolo_v2(int argc, char *argv[])
 	const char *win_name = "video";
 	namedWindow(win_name);
 	int key = -1;
-	for (;;) {
+        while(1){
 		video_mutex.lock();
 		if (!bgr.empty())
 			imshow(win_name, bgr);
@@ -1943,12 +2054,176 @@ void test_whole_model_2_video_model(int argc, char *argv[])
 	destroyWindow(win_name);
 }
 
+void test_whole_model_1_video_tiny_yolo_v2(int argc, char *argv[])
+{
+	int ret;
+	const char *filename = "../TINY_YOLO_V2.Blob";//"/home/yu/tini_yolo.blob";
+
+	int blob_nums = 1; dp_blob_parm_t parms = {0,416,416,18000*2};
+        dp_netMean mean={0,0,0,255};
+	if (argc > 0)
+	{
+		filename = argv[0];
+		blob_nums = atoi(argv[1]);
+		for (int i = 0; i<blob_nums; i++)
+		{
+			parms.InputSize_height = atoi(argv[i * 3 + 2 + 0]);
+			parms.InputSize_width = atoi(argv[i * 3 + 2 + 1]);
+			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
+		}
+	}
+
+	test_update_model_parems(blob_nums, &parms);
+        dp_set_blob_mean_std(blob_nums,&mean);
+	ret = dp_update_model(filename);
+	if (ret == 0) {
+		printf("Test dp_update_model(%s) sucessfully!\n", filename);
+	}
+	else {
+		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
+	}	
+	DP_MODEL_NET net=DP_TINY_YOLO_V2_NET;
+	dp_register_video_frame_cb(video_callback, &net);
+	dp_register_box_device_cb(box_callback_model_demo,&net);
+	ret = dp_start_camera_video();
+	if (ret == 0) {
+		printf("Test test_start_video successfully!\n");
+	}
+	else {
+		printf("Test test_start_video failed! ret=%d\n", ret);
+	}
+
+	const char *win_name = "video";
+	namedWindow(win_name);
+	int key = -1;
+	for (;;) {
+		video_mutex.lock();
+		if (!bgr.empty())
+			imshow(win_name, bgr);
+		video_mutex.unlock();
+		key = waitKey(30);
+	}
+	destroyWindow(win_name);
+}
+
+void test_whole_model_1_video_jieshang(int argc, char *argv[])
+{
+	int ret;
+	const char *filename = "../jieshang.blob";//"/home/yu/tini_yolo.blob";
+
+	int blob_nums = 1; dp_blob_parm_t parms = {0,224,224,1000*2};
+        dp_netMean mean={104,116.7,122.7,1};
+	if (argc > 0)
+	{
+		filename = argv[0];
+		blob_nums = atoi(argv[1]);
+		for (int i = 0; i<blob_nums; i++)
+		{
+			parms.InputSize_height = atoi(argv[i * 3 + 2 + 0]);
+			parms.InputSize_width = atoi(argv[i * 3 + 2 + 1]);
+			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
+		}
+	}
+
+	test_update_model_parems(blob_nums, &parms);
+        dp_set_blob_mean_std(blob_nums,&mean);
+	ret = dp_update_model(filename);
+	if (ret == 0) {
+		printf("Test dp_update_model(%s) sucessfully!\n", filename);
+	}
+	else {
+		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
+	}
+#if 0	
+	DP_MODEL_NET net=DP_TINY_YOLO_V2_NET;
+	dp_register_video_frame_cb(video_callback, &net);
+	dp_register_box_device_cb(box_callback_model_demo,&net);
+#endif
+	ret = dp_start_camera_video();
+	if (ret == 0) {
+		printf("Test test_start_video successfully!\n");
+	}
+	else {
+		printf("Test test_start_video failed! ret=%d\n", ret);
+	}
+
+	const char *win_name = "video";
+	namedWindow(win_name);
+	int key = -1;
+	for (;;) {
+		video_mutex.lock();
+		if (!bgr.empty())
+			imshow(win_name, bgr);
+		video_mutex.unlock();
+		key = waitKey(30);
+	}
+	destroyWindow(win_name);
+}
+
+
+void test_whole_model_1_video_face_ali(int argc, char *argv[])
+{
+	int ret;
+	const char *filename = "../mvoutput.graph";
+
+	int blob_nums = 1; dp_blob_parm_t parms = {1,320,320,6400*2};
+    dp_netMean mean={127,127,127,1};
+	if (argc > 0)
+	{
+		filename = argv[0];
+		blob_nums = atoi(argv[1]);
+		for (int i = 0; i<blob_nums; i++)
+		{
+			parms.InputSize_height = atoi(argv[i * 3 + 2 + 0]);
+			parms.InputSize_width = atoi(argv[i * 3 + 2 + 1]);
+			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
+		}
+	}
+
+	test_update_model_parems(blob_nums, &parms);
+        dp_set_blob_mean_std(blob_nums,&mean);
+	ret = dp_update_model(filename);
+	if (ret == 0) {
+		printf("Test dp_update_model(%s) sucessfully!\n", filename);
+	}
+	else {
+		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
+	}
+	
+	DP_MODEL_NET net=DP_ALI_FACENET;
+	dp_register_video_frame_cb(video_callback, &net);
+	dp_register_box_device_cb(box_callback_model_demo,&net);
+        dp_register_fps_device_cb(fps_callback,&net);
+	ret = dp_start_camera_video();
+	if (ret == 0) {
+		printf("Test test_start_video successfully!\n");
+	}
+	else {
+		printf("Test test_start_video failed! ret=%d\n", ret);
+	}
+
+	const char *win_name = "video";
+	namedWindow(win_name);
+	int key = -1;
+	for (;;) {
+		 video_mutex.lock();
+                 //clock_t start;
+                 //start=clock();
+		if (!bgr.empty())
+			imshow(win_name, bgr);
+ 
+                //printf("\ninterval = %d ms\n", start);
+		video_mutex.unlock();
+		key = waitKey(30);
+	}
+	destroyWindow(win_name);
+}
+
 testcase_t g_testcases[] =
 {
 	{"ping", NULL, test_ping},
 	{ "version", NULL, test_version },
 	{ "hardware_test", NULL, test_hardware_test },	
-	{ "update_firmware", "update_firmware $filename", test_update_firmware },
 	{ "get_frame", "get_frame", test_get_frame },
 #ifdef SUPPORT_OPENCV
 	{ "start_video", "start_video", test_start_video },
@@ -1974,6 +2249,9 @@ testcase_t g_testcases[] =
     {"test_whole_model_1_video_mobilenets","test_whole_model_1_video_mobilenets",test_whole_model_1_video_mobilenets},
     {"test_whole_model_2_video_model","test_whole_model_2_video_model",test_whole_model_2_video_model},
     {"test_whole_model_1_video_tiny_yolo_v2","test_whole_model_1_video_tiny_yolo_v2",test_whole_model_1_video_tiny_yolo_v2},
+    {"test_whole_model_1_video_jieshang","test_whole_model_1_video_jieshang",test_whole_model_1_video_jieshang},
+    {"test_whole_model_1_video_face_ali","test_whole_model_1_video_face_ali",test_whole_model_1_video_face_ali},
+    {"test_whole_model_2_video_model_jingdong","test_whole_model_2_video_model_jingdong",test_whole_model_2_video_model_jingdong}
 };
 int g_case_count = sizeof(g_testcases) / sizeof(testcase_t);
 
