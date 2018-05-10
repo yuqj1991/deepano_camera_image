@@ -23,7 +23,7 @@ using namespace cv;
 
 using namespace std;
 char **label_cagerioes;
-dp_image_box_t box_demo[100];
+dp_image_box_t box_demo[200];
 char categoles[100][20];
 int num_box_demo=0;
 std::mutex video_mutex;
@@ -157,6 +157,11 @@ void fps_callback(int32_t *buffer_fps,void *param)
   //int *buffer=(int *)buffer_fps;
   fps=*(buffer_fps);
   printf("fps--:%d\n",fps);
+  time_t timep;  
+  char s[30];        
+  time(&timep);   
+  strcpy(s,ctime(&timep)); 
+  printf("%s\n", s);  
 }
 
 void video_callback(dp_img_t *img, void *param)
