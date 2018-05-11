@@ -35,8 +35,60 @@ typedef enum {
 	DP_IND_FRAME = 1,
 	DP_IND_FIRST_RESULT,//cdk
 	DP_IND_SEC_RESULT,//cdk
-	DP_IND_SENDBACK_BOX,//cdk		
+        DP_Ddurcallriton_stage,	//cdk	
 }dp_indication_t;
+
+const char * const OP_NAMES[] =
+    {
+        "kConv",                 ///< Convolution
+        "kMaxPool",              ///< Max-Pooling
+        "kAvgPool",              ///< Average-Pooling
+        "kSoftMax",              ///< SoftMax
+        "kFC",                   ///< Fully connected layer
+        "kNone0",                ///< No post operation
+        "kRelu",                 ///< rectified linear unit (Relu) rectifier
+        "kReluX",                ///< rectified linear unit (Relu) rectifier - clamp(0,X)
+        "kDepthConv",            ///< Depthwise Convolution
+        "kBias",                 ///< Bias
+        "kPRelu",                ///< PReLU
+        "kLRN",                  ///< LRN
+        "kSum",                  ///< Sum of input and weight
+        "kProd",                 ///< Prod of input and weight
+        "kMax",                  ///< Max between input and weight
+        "kScale",                ///< Multiply each plane with a multiplier and add a bias
+        "kRelayout",
+        "kSquare",               ///< Square the input
+        "kInnerLRN",             ///< Output = (1 + alpha * input) ^ -beta
+        "kCopy",                 ///< Copy considering input and output strides
+        "kSigmoid",              ///< Sigmoid
+        "kTanh",                 ///< Tanh
+        "kDeconvolution",        ///< Deconvolution a.k.a. Transposed convolution
+        "kElu",                  ///< Exponential linear unit (ELU) rectifier
+        "kReshape",              ///< Reshape
+        "kToPlaneMajor",         ///< Convert from plane major to plane minor
+        "kPower",                ///< Power layer
+        "kCrop",                 ///< Crop layer
+        "kTile",                 ///< Tile layer
+        "kRegionYolo",           ///< Region layer
+        "kReorgYolo",            ///< Reorg layer
+        "kConvert_u8f16",        ///< Convert_u8f16 layer
+        "kConvert_f32f16",       ///< Convert_f32f16 layer
+        "kMyriadXHwConvolution", ///< Reserved for Hardware Ops
+        "kMyriadXHwPooling",     ///< Reserved for Hardware Ops
+        "kMyriadXHwFCL",         ///< Reserved for Hardware Ops
+        "kMyriadXHwPostOps",     ///< Reserved for Hardware Ops
+        "kConvertHwSw",          ///< Convert HW/SW layer
+        "kPermute",              ///< Permute
+        "kNormalize",            ///< Normalize
+        "kPriorBox",             ///< PriorBox
+        "kDetectionOutput",      ///< kDetectionOutput
+        "kLeakyRelu",            ///< LeakyRelu
+        "kSumReduce",			 ///< Sum of channels
+        "kMaxWithConstant"		 ///< Maximum of input and constant
+	"kRsqrt"				 ///< Inverse square root
+	"kScaleWithScalar"		 ///< Multiply tensor by scalar
+    };
+
 	
 /** \ingroup dp_ver_t
 * device version structure

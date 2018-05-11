@@ -46,6 +46,8 @@ typedef void(*dp_get_fps_cb_t)(int32_t *fps,void *param);
 
 typedef void(*dp_second_blob_outresult_back_cb_t)(void * result,void *param);
 
+typedef void(*dp_parse_blob_stage_time_cb_t)(double * result,void *param);
+
 /** \ingroup dp_first_blob_out_back_cb_t
 * host parseing box image to device func callack type.
 *Invoke this callback when receving a first_result and give the boxes
@@ -139,6 +141,8 @@ EXTERN DLL int dp_register_fps_device_cb(dp_get_fps_cb_t cb, void *param);
 EXTERN DLL int dp_register_box_device_cb(dp_first_blob_outresult_back_cb_t cb, void *param);
 
 EXTERN DLL int dp_register_second_box_device_cb(dp_second_blob_outresult_back_cb_t cb, void *param);
+
+EXTERN DLL int dp_register_parse_blob_time_device_cb(dp_parse_blob_stage_time_cb_t cb, void *param);
 
 /** \ingroup dp_set_camera_config
 * Set camera configuration.

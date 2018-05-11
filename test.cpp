@@ -23,7 +23,7 @@ using namespace cv;
 
 using namespace std;
 char **label_cagerioes;
-dp_image_box_t box_demo[200];
+dp_image_box_t box_demo[10];
 char categoles[100][20];
 int num_box_demo=0;
 std::mutex video_mutex;
@@ -32,6 +32,9 @@ static int num_box=1;
 
 int32_t fps;
 
+double blob_parse_stage[40];
+int blob_stage_index;
+double Sum_blob_parse_time=0;
 #define UNUSED(x) (void)(x)
 
 
@@ -70,7 +73,7 @@ typedef struct _max_age
 
 max_age argsort_age(float * a,int length)
 {
-  max_age max;
+  max_age max={0,0};
   for(int i=0;i<length;i++)
   {
     if(max.max_predected<=a[i])
@@ -164,10 +167,27 @@ void fps_callback(int32_t *buffer_fps,void *param)
   printf("%s\n", s);  
 }
 
+void blob_parse_callback(double *buffer_fps,void *param)
+{
+  for(int stage=0;stage<40;stage++)
+  {
+     blob_parse_stage[stage]=buffer_fps[stage*2+0];
+     blob_stage_index=buffer_fps[stage*2+1];
+     Sum_blob_parse_time+=blob_parse_stage[stage];
+     printf("\nthe %d stage parse spending %f ms,and optType:%s\n",stage,blob_parse_stage[stage],OP_NAMES[blob_stage_index]);
+     if((stage+1)<40)
+     {if(buffer_fps[(stage+1)*2+0]==0)
+       break;
+     }
+  }
+   printf("the total spending %f ms\n",Sum_blob_parse_time);
+   Sum_blob_parse_time=0; 
+}
+
 void video_callback(dp_img_t *img, void *param)
 {
 	Mat myuv(img->height + img->height / 2, img->width, CV_8UC1, img->img);
-	video_mutex.lock();
+	//video_mutex.lock();
 	cvtColor(myuv, bgr, CV_YUV2BGR_I420, 0);
 	DP_MODEL_NET model=*((DP_MODEL_NET*)param);
 	switch (model)
@@ -205,6 +225,7 @@ void video_callback(dp_img_t *img, void *param)
                 string buffer="fps:"+std::to_string(fps);
                 cv::putText(bgr,buffer.c_str(),cvPoint(40,40),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
              break;
+             num_box_demo=0;
 	  }
           default:
           {
@@ -213,7 +234,7 @@ void video_callback(dp_img_t *img, void *param)
 	     break;
           }	  
       }
-	video_mutex.unlock();
+	//video_mutex.unlock();
 }
 
 void test_start_video(int argc, char *argv[])
@@ -1128,6 +1149,7 @@ void test_whole_model_2_video_model_jingdong(int argc, char *argv[])
 	dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
 	dp_register_video_frame_cb(video_callback, &net_1);
         dp_register_fps_device_cb(fps_callback,&net_1);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1209,6 +1231,7 @@ void test_whole_model_1_video_alexnet(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1286,6 +1309,7 @@ void test_whole_model_1_video_googleNet(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1340,6 +1364,7 @@ void test_whole_model_1_video_TinyYoloNet(int argc, char *argv[])
 	dp_register_box_device_cb(box_callback_model_demo,&net);
 	dp_register_video_frame_cb(video_callback, &net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1395,6 +1420,7 @@ void test_whole_model_1_video_AgeNet(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1450,6 +1476,7 @@ void test_whole_model_1_video_gendernet(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
 	dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1528,6 +1555,7 @@ void test_whole_model_1_video_Resnet_18(int argc, char *argv[])
 	dp_register_box_device_cb(box_callback_model_demo,&net);
 	dp_register_video_frame_cb(video_callback, &net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1606,6 +1634,7 @@ void test_whole_model_1_video_SqueezeNet(int argc, char *argv[])
 	dp_register_box_device_cb(box_callback_model_demo,&net);
 	dp_register_fps_device_cb(fps_callback,&net);
 	dp_register_video_frame_cb(video_callback, &net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1661,6 +1690,7 @@ void test_whole_model_1_video_SSD_MobileNet(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1730,6 +1760,7 @@ void test_whole_model_1_video_inception_v1(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1801,6 +1832,7 @@ void test_whole_model_1_video_inception_v2(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1872,6 +1904,7 @@ void test_whole_model_1_video_inception_v3(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
 	dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1942,6 +1975,7 @@ void test_whole_model_1_video_inception_v4(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -1996,6 +2030,7 @@ void test_whole_model_1_video_mnist(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -2074,6 +2109,7 @@ void test_whole_model_1_video_mobilenets(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -2151,6 +2187,7 @@ void test_whole_model_2_video_model(int argc, char *argv[])
 	dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
 	dp_register_video_frame_cb(video_callback, &net_1);
         dp_register_fps_device_cb(fps_callback,&net_1);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -2204,6 +2241,7 @@ void test_whole_model_1_video_tiny_yolo_v2(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -2253,10 +2291,11 @@ void test_whole_model_2_video_tiny_yolo_v2(int argc, char *argv[])
 	
 	DP_MODEL_NET net_1=DP_TINY_YOLO_V2_NET;
 	dp_register_box_device_cb(box_callback_model_two_demo, &net_1);	
-	DP_MODEL_NET net_2=DP_GOOGLE_NET;
-	dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
+	DP_MODEL_NET net_2=DP_TINY_YOLO_V2_NET;
+	//dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
 	dp_register_video_frame_cb(video_callback, &net_1);
         dp_register_fps_device_cb(fps_callback,&net_1);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
@@ -2312,6 +2351,7 @@ void test_whole_model_1_video_jieshang(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net); 
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 #endif
 	ret = dp_start_camera_video();
 	if (ret == 0) {
@@ -2368,6 +2408,7 @@ void test_whole_model_1_video_face(int argc, char *argv[])
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
 	ret = dp_start_camera_video();
 	if (ret == 0) {
 		printf("Test test_start_video successfully!\n");
