@@ -23,7 +23,7 @@ using namespace cv;
 
 using namespace std;
 char **label_cagerioes;
-dp_image_box_t box_demo[10];
+dp_image_box_t box_demo[1000];
 char categoles[100][20];
 int num_box_demo=0;
 std::mutex video_mutex;
@@ -32,7 +32,7 @@ static int num_box=1;
 
 int32_t fps;
 
-double blob_parse_stage[40];
+double blob_parse_stage[300];
 int blob_stage_index;
 double Sum_blob_parse_time=0;
 #define UNUSED(x) (void)(x)
@@ -84,8 +84,6 @@ max_age argsort_age(float * a,int length)
   }
   return max;
 }
-
-
 
 void test_ping(int argc, char *argv[])
 {
@@ -169,13 +167,13 @@ void fps_callback(int32_t *buffer_fps,void *param)
 
 void blob_parse_callback(double *buffer_fps,void *param)
 {
-  for(int stage=0;stage<40;stage++)
+  for(int stage=0;stage<150;stage++)
   {
      blob_parse_stage[stage]=buffer_fps[stage*2+0];
      blob_stage_index=buffer_fps[stage*2+1];
      Sum_blob_parse_time+=blob_parse_stage[stage];
      printf("\nthe %d stage parse spending %f ms,and optType:%s\n",stage,blob_parse_stage[stage],OP_NAMES[blob_stage_index]);
-     if((stage+1)<40)
+     if((stage+1)<150)
      {if(buffer_fps[(stage+1)*2+0]==0)
        break;
      }
@@ -187,7 +185,7 @@ void blob_parse_callback(double *buffer_fps,void *param)
 void video_callback(dp_img_t *img, void *param)
 {
 	Mat myuv(img->height + img->height / 2, img->width, CV_8UC1, img->img);
-	//video_mutex.lock();
+	video_mutex.lock();
 	cvtColor(myuv, bgr, CV_YUV2BGR_I420, 0);
 	DP_MODEL_NET model=*((DP_MODEL_NET*)param);
 	switch (model)
@@ -203,6 +201,7 @@ void video_callback(dp_img_t *img, void *param)
              string buffer="fps:"+std::to_string(fps);
              cv::putText(bgr,buffer.c_str(),cvPoint(40,40),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
 	     break;
+             num_box_demo=0;
 	  }
 	  case DP_SSD_MOBILI_NET:
 	  {
@@ -214,6 +213,7 @@ void video_callback(dp_img_t *img, void *param)
                 string buffer="fps:"+std::to_string(fps);
                 cv::putText(bgr,buffer.c_str(),cvPoint(40,40),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
              break;
+             num_box_demo=0;
 	  }
           case DP_TINY_YOLO_V2_NET:
 	  {
@@ -234,7 +234,7 @@ void video_callback(dp_img_t *img, void *param)
 	     break;
           }	  
       }
-	//video_mutex.unlock();
+      video_mutex.unlock();
 }
 
 void test_start_video(int argc, char *argv[])
@@ -835,6 +835,7 @@ void box_callback_model_demo(void *result,void *param)
          for (u32 i = 0; i < resultlen; i++)
             resultfp32[i]= f16Tof32(probabilities[i]);
          int num_valid_boxes=int(resultfp32[0]);
+         int index=0;
 		 printf("num_valid_bxes:%d\n",num_valid_boxes);
 		 for(int box_index=0;box_index<num_valid_boxes;box_index++)
 		 {
@@ -844,14 +845,15 @@ void box_callback_model_demo(void *result,void *param)
 		   	   continue;
 		   }
 		   printf("%d %f %f %f %f %f\n",int(resultfp32[base_index+1]),resultfp32[base_index+2],resultfp32[base_index+3],resultfp32[base_index+4],resultfp32[base_index+5],resultfp32[base_index+6]);
-		   box_demo[num_box_demo].x1=(int(resultfp32[base_index+3]*img_width)>0)?int(resultfp32[base_index+3]*img_width):0;
-		   box_demo[num_box_demo].x2=(int(resultfp32[base_index+5]*img_width)<img_width)?int(resultfp32[base_index+5]*img_width):img_width;
-		   box_demo[num_box_demo].y1=(int(resultfp32[base_index+4]*img_height)>0)?int(resultfp32[base_index+4]*img_height):0;	   
-		   box_demo[num_box_demo].y2=(int(resultfp32[base_index+6]*img_height)<img_height)?int(resultfp32[base_index+6]*img_height):img_height;
-		   memcpy(categoles[num_box_demo],category[int(resultfp32[base_index+1])],20);
-		   num_box_demo++;
+		   box_demo[index].x1=(int(resultfp32[base_index+3]*img_width)>0)?int(resultfp32[base_index+3]*img_width):0;
+		   box_demo[index].x2=(int(resultfp32[base_index+5]*img_width)<img_width)?int(resultfp32[base_index+5]*img_width):img_width;
+		   box_demo[index].y1=(int(resultfp32[base_index+4]*img_height)>0)?int(resultfp32[base_index+4]*img_height):0;	   
+		   box_demo[index].y2=(int(resultfp32[base_index+6]*img_height)<img_height)?int(resultfp32[base_index+6]*img_height):img_height;
+		   memcpy(categoles[index],category[int(resultfp32[base_index+1])],20);
+		   index++;
 		 }
-         free(resultfp32);
+                num_box_demo=index;
+                free(resultfp32);
 		 break;
 	  }
 	  case DP_INCEPTION_V1:
@@ -2380,8 +2382,8 @@ void test_whole_model_1_video_face(int argc, char *argv[])
 	int ret;
 	const char *filename = "../mvoutput.graph";
 
-	int blob_nums = 1; dp_blob_parm_t parms = {1,320,320,6400*2};
-    dp_netMean mean={127,127,127,1};
+	int blob_nums = 1; dp_blob_parm_t parms = {1,320,320,6400*5*2};
+    dp_netMean mean={127,127,127,21.167};
 	if (argc > 0)
 	{
 		filename = argv[0];
@@ -2506,6 +2508,7 @@ int main(int argc, char *argv[])
 	else {
 		usage();
 	}
+    ret = dp_stop_camera();
     ret = dp_uninit();
 	if (ret != 0) {
 		printf("dp_uninit failed!");
