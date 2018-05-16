@@ -32,7 +32,7 @@ static int num_box=1;
 
 int32_t fps;
 
-double blob_parse_stage[300];
+double blob_parse_stage[400];
 int blob_stage_index;
 double Sum_blob_parse_time=0;
 #define UNUSED(x) (void)(x)
@@ -167,13 +167,13 @@ void fps_callback(int32_t *buffer_fps,void *param)
 
 void blob_parse_callback(double *buffer_fps,void *param)
 {
-  for(int stage=0;stage<150;stage++)
+  for(int stage=0;stage<200;stage++)
   {
      blob_parse_stage[stage]=buffer_fps[stage*2+0];
      blob_stage_index=buffer_fps[stage*2+1];
      Sum_blob_parse_time+=blob_parse_stage[stage];
      printf("\nthe %d stage parse spending %f ms,and optType:%s\n",stage,blob_parse_stage[stage],OP_NAMES[blob_stage_index]);
-     if((stage+1)<150)
+     if((stage+1)<200)
      {if(buffer_fps[(stage+1)*2+0]==0)
        break;
      }
@@ -470,6 +470,7 @@ void box_callback_model_two_demo(void *result,void *param)
             resultfp32[i]= f16Tof32(probabilities[i]);
          int num_valid_boxes=int(resultfp32[0]);
 		 printf("num_valid_bxes:%d\n",num_valid_boxes);
+		int index=0;
 		 for(int box_index=0;box_index<num_valid_boxes;box_index++)
 		 {
 		   int base_index=7*box_index+7;
@@ -478,14 +479,15 @@ void box_callback_model_two_demo(void *result,void *param)
 		   	   continue;
 		   }
 		   printf("%d %f %f %f %f %f\n",int(resultfp32[base_index+1]),resultfp32[base_index+2],resultfp32[base_index+3],resultfp32[base_index+4],resultfp32[base_index+5],resultfp32[base_index+6]);
-		   box_demo[num_box_demo].x1=(int(resultfp32[base_index+3]*img_width)>0)?int(resultfp32[base_index+3]*img_width):0;
-		   box_demo[num_box_demo].x2=(int(resultfp32[base_index+5]*img_width)<img_width)?int(resultfp32[base_index+5]*img_width):img_width;
-		   box_demo[num_box_demo].y1=(int(resultfp32[base_index+4]*img_height)>0)?int(resultfp32[base_index+4]*img_height):0;	   
-		   box_demo[num_box_demo].y2=(int(resultfp32[base_index+6]*img_height)<img_height)?int(resultfp32[base_index+6]*img_height):img_height;
-		   memcpy(categoles[num_box_demo],category[int(resultfp32[base_index+1])],20);
-		   num_box_demo++;
+		   box_demo[index].x1=(int(resultfp32[base_index+3]*img_width)>0)?int(resultfp32[base_index+3]*img_width):0;
+		   box_demo[index].x2=(int(resultfp32[base_index+5]*img_width)<img_width)?int(resultfp32[base_index+5]*img_width):img_width;
+		   box_demo[index].y1=(int(resultfp32[base_index+4]*img_height)>0)?int(resultfp32[base_index+4]*img_height):0;	   
+		   box_demo[index].y2=(int(resultfp32[base_index+6]*img_height)<img_height)?int(resultfp32[base_index+6]*img_height):img_height;
+		   memcpy(categoles[index],category[int(resultfp32[base_index+1])],20);
+		   index++;
 		 }
-         int box_demo_num=0;
+                 num_box_demo=index; 
+                 int box_demo_num=0;
 		 if((num_valid_boxes<=2)&&(num_valid_boxes>0))
 		 {
 		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(num_valid_boxes*sizeof(dp_image_box_t));
@@ -858,17 +860,15 @@ void box_callback_model_demo(void *result,void *param)
 	  }
 	  case DP_INCEPTION_V1:
 	  {
-		 u16* probabilities = (u16*)result;
-         unsigned int resultlen=1001;
-         float*resultfp32;
-         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-         int img_width=1280;
-         int img_height=960;
-         for (u32 i = 0; i < resultlen; i++)
-            resultfp32[i]= f16Tof32(probabilities[i]);
+		u16* probabilities = (u16*)result;
+         	unsigned int resultlen=1001;
+         	float*resultfp32;
+         	resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+         	for (u32 i = 0; i < resultlen; i++)
+         	   resultfp32[i]= f16Tof32(probabilities[i]);
 		 float temp_predeiction=0.0;
 		 int index_temp=0;
-         for(int i=0;i<5;i++)
+         	 for(int i=0;i<5;i++)
 		 {
 		   temp_predeiction=resultfp32[i];
 		   index_temp=i;
@@ -882,24 +882,25 @@ void box_callback_model_demo(void *result,void *param)
 		   }
 		   resultfp32[index_temp]=resultfp32[i];
 		   resultfp32[i]=temp_predeiction;
-   		   printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
+		   printf(" probabilityes:%0.3f,index:%d\n",temp_predeiction,index_temp);
+   		   //printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
 		 }
-         free(resultfp32);
-		 break;
+         	free(resultfp32);
+		break;
 	  }
 	   case DP_INCEPTION_V2:
 	  {
 		 u16* probabilities = (u16*)result;
-         unsigned int resultlen=1001;
-         float*resultfp32;
-         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-         int img_width=1280;
-         int img_height=960;
-         for (u32 i = 0; i < resultlen; i++)
-            resultfp32[i]= f16Tof32(probabilities[i]);
+	         unsigned int resultlen=1001;
+	         float*resultfp32;
+        	 resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+        	 int img_width=1280;
+        	 int img_height=960;
+        	 for (u32 i = 0; i < resultlen; i++)
+        	    resultfp32[i]= f16Tof32(probabilities[i]);
 		 float temp_predeiction=0.0;
 		 int index_temp=0;
-         for(int i=0;i<5;i++)
+        	 for(int i=0;i<5;i++)
 		 {
 		   temp_predeiction=resultfp32[i];
 		   index_temp=i;
@@ -913,25 +914,24 @@ void box_callback_model_demo(void *result,void *param)
 		   }
 		   resultfp32[index_temp]=resultfp32[i];
 		   resultfp32[i]=temp_predeiction;
-   		   printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
+		   printf(" probabilityes:%0.3f,index:%d\n",temp_predeiction,index_temp);
+   		   //printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
 		 }
-         free(resultfp32);
+        	 free(resultfp32);
 		 break;
 	  }
-	   case DP_INCEPTION_V3:
+	  case DP_INCEPTION_V3:
 	  {
-		 u16* probabilities = (u16*)result;
-         unsigned int resultlen=1001;
-         float*resultfp32;
-         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-         int img_width=1280;
-         int img_height=960;
-         for (u32 i = 0; i < resultlen; i++)
-            resultfp32[i]= f16Tof32(probabilities[i]);
-		 float temp_predeiction=0.0;
-		 int index_temp=0;
-         for(int i=0;i<5;i++)
-		 {
+		u16* probabilities = (u16*)result;
+         	unsigned int resultlen=1001;
+         	float*resultfp32;
+         	resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+         	for (u32 i = 0; i < resultlen; i++)
+            		resultfp32[i]= f16Tof32(probabilities[i]);
+         	float temp_predeiction=0.0;
+	 	int index_temp=0;
+         	for(int i=0;i<5;i++)
+		{
 		   temp_predeiction=resultfp32[i];
 		   index_temp=i;
 		   for(int j=i+1;j<resultlen;j++)
@@ -944,24 +944,23 @@ void box_callback_model_demo(void *result,void *param)
 		   }
 		   resultfp32[index_temp]=resultfp32[i];
 		   resultfp32[i]=temp_predeiction;
-   		   printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
-		 }
-         free(resultfp32);
+		   printf(" probabilityes:%0.3f,index:%d\n",temp_predeiction,index_temp);
+   		   //printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
+		}
+         	free(resultfp32);
 		 break;
 	  }
-		case DP_INCEPTION_V4:
-	  {
+	case DP_INCEPTION_V4:
+	{
 		 u16* probabilities = (u16*)result;
-         unsigned int resultlen=1001;
-         float*resultfp32;
-         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-         int img_width=1280;
-         int img_height=960;
-         for (u32 i = 0; i < resultlen; i++)
-            resultfp32[i]= f16Tof32(probabilities[i]);
+        	 unsigned int resultlen=1001;
+        	 float*resultfp32;
+        	 resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+        	 for (u32 i = 0; i < resultlen; i++)
+        	    resultfp32[i]= f16Tof32(probabilities[i]);
 		 float temp_predeiction=0.0;
 		 int index_temp=0;
-         for(int i=0;i<5;i++)
+	         for(int i=0;i<5;i++)
 		 {
 		   temp_predeiction=resultfp32[i];
 		   index_temp=i;
@@ -975,7 +974,8 @@ void box_callback_model_demo(void *result,void *param)
 		   }
 		   resultfp32[index_temp]=resultfp32[i];
 		   resultfp32[i]=temp_predeiction;
-   		   printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
+		   printf(" probabilityes:%0.3f,index:%d\n",temp_predeiction,index_temp);
+   		   //printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
 		 }
          free(resultfp32);
 		 break;
@@ -1896,10 +1896,10 @@ void test_whole_model_1_video_inception_v3(int argc, char *argv[])
 	int index_label=0;
 	while(fgets(buffer,500,fp)!=NULL)
 	{
-		label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-	     memcpy(label_cagerioes[index_label],buffer,500);
-		 label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-		 index_label++;
+	   label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
+	   memcpy(label_cagerioes[index_label],buffer,500);
+	   label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
+	   index_label++;
 	}
 	fclose(fp);
 	DP_MODEL_NET net=DP_INCEPTION_V3;
@@ -1948,7 +1948,7 @@ void test_whole_model_1_video_inception_v4(int argc, char *argv[])
 	}
 
 	test_update_model_parems(blob_nums, &parms);
-    dp_set_blob_mean_std(blob_nums,&mean);
+	dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -1967,10 +1967,10 @@ void test_whole_model_1_video_inception_v4(int argc, char *argv[])
 	int index_label=0;
 	while(fgets(buffer,500,fp)!=NULL)
 	{
-		label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-	     memcpy(label_cagerioes[index_label],buffer,500);
-		 label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-		 index_label++;
+	   label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
+	   memcpy(label_cagerioes[index_label],buffer,500);
+	   label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
+	   index_label++;
 	}
 	fclose(fp);
 	DP_MODEL_NET net=DP_INCEPTION_V4;
