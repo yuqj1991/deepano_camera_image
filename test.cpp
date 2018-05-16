@@ -681,34 +681,6 @@ void box_callback_model_demo(void *result,void *param)
 		 free(resultfp32);
 		 break;
 	  }
-	  case DP_ALEX_NET:
-	  {
-	    u16* probabilities=(u16*)result;
-		unsigned int resultlen=1000;
-		float *resultfp32=(float *)malloc(resultlen*sizeof(*resultfp32));
-		for(u32 i=0;i<resultlen;i++)
-			resultfp32[i]=f16Tof32(probabilities[i]);
-		float temp_predeiction=0.0;
-		int index_temp=0;
-		for(int i=0;i<5;i++)
-		{
-		   temp_predeiction=resultfp32[i];
-		   index_temp=i;
-		   for(int j=i+1;j<resultlen;j++)
-		   {
-		     if(temp_predeiction<=resultfp32[j])
-		     {
-		        temp_predeiction=resultfp32[j];
-				index_temp=j;
-		     }
-		   }
-		   resultfp32[index_temp]=resultfp32[i];
-		   resultfp32[i]=temp_predeiction;
-   		   printf("prediction classes: %sand the probabilityes:%0.3f\n",label_cagerioes[index_temp],temp_predeiction);
-		}
-		free(resultfp32);
-		break;
-	  }
 	  case DP_GOOGLE_NET:
 	  {
 	     printf("google net---\n");
@@ -1164,88 +1136,6 @@ void test_whole_model_2_video_model_jingdong(int argc, char *argv[])
 	namedWindow(win_name);
 	int key = -1;
         while(1){
-		video_mutex.lock();
-		if (!bgr.empty())
-			imshow(win_name, bgr);
-		video_mutex.unlock();
-		key = waitKey(30);
-	}
-	destroyWindow(win_name);
-}
-
-
-
-void test_whole_model_1_video_alexnet(int argc, char *argv[])
-{
-	int ret;
-	const char *filename = "../alexnet.blob";//"/home/yu/tini_yolo.blob";
-
-	int blob_nums = 1; dp_blob_parm_t parms = {0,227,227,1000*2};
-        dp_netMean mean={104.0068,116.6886,122.6789,1};
-	if (argc > 0)
-	{
-		filename = argv[0];
-		blob_nums = atoi(argv[1]);
-		for (int i = 0; i<blob_nums; i++)
-		{
-			parms.InputSize_height = atoi(argv[i * 3 + 2 + 0]);
-			parms.InputSize_width = atoi(argv[i * 3 + 2 + 1]);
-			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
-		}
-	}
-
-	test_update_model_parems(blob_nums, &parms);
-    dp_set_blob_mean_std(blob_nums,&mean);
-	ret = dp_update_model(filename);
-	if (ret == 0) {
-		printf("Test dp_update_model(%s) sucessfully!\n", filename);
-	}
-	else {
-		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
-	}
-	
-	FILE *fp=fopen("synset_words.txt","r");
-    if(fp==NULL)
-    {
-     printf("can not open the file\n");
-    }
-    label_cagerioes=(char **)malloc(1000*sizeof(char*));
-    char buffer[500];
-    int index_label=0;
-    while(fgets(buffer,500,fp)!=NULL)
-    {
-      label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-      memcpy(label_cagerioes[index_label],buffer,500);
-      for(int m=0;m<500;m++)
-      {
-        label_cagerioes[index_label][m]=label_cagerioes[index_label][m+10];
-        if(m==489)
-        {
-            break;
-        }
-      }
-	  label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-      index_label++;
-    }
-	fclose(fp);
-	
-	DP_MODEL_NET net=DP_ALEX_NET;
-	dp_register_video_frame_cb(video_callback, &net);
-	dp_register_box_device_cb(box_callback_model_demo,&net);
-        dp_register_fps_device_cb(fps_callback,&net);
-        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
-	ret = dp_start_camera_video();
-	if (ret == 0) {
-		printf("Test test_start_video successfully!\n");
-	}
-	else {
-		printf("Test test_start_video failed! ret=%d\n", ret);
-	}
-
-	const char *win_name = "video";
-	namedWindow(win_name);
-	int key = -1;
-	for (;;) {
 		video_mutex.lock();
 		if (!bgr.empty())
 			imshow(win_name, bgr);
@@ -2382,7 +2272,7 @@ void test_whole_model_1_video_face(int argc, char *argv[])
 	int ret;
 	const char *filename = "../mvoutput.graph";
 
-	int blob_nums = 1; dp_blob_parm_t parms = {1,320,320,6400*5*2};
+	int blob_nums = 1; dp_blob_parm_t parms = {0,640,640,160*160*2};
     dp_netMean mean={127,127,127,21.167};
 	if (argc > 0)
 	{
@@ -2457,7 +2347,6 @@ testcase_t g_testcases[] =
     {"test_whole_model_1_video_AgeNet","test_whole_model_1_video_AgeNet",test_whole_model_1_video_AgeNet},
     {"test_whole_model_1_video_TinyYoloNet","test_whole_model_1_video_TinyYoloNet",test_whole_model_1_video_TinyYoloNet},
     {"test_whole_model_1_video_googleNet","test_whole_model_1_video_googleNet",test_whole_model_1_video_googleNet},
-    {"test_whole_model_1_video_alexnet","test_whole_model_1_video_alexnet",test_whole_model_1_video_alexnet},
     {"test_whole_model_1_video_mnist","test_whole_model_1_video_mnist",test_whole_model_1_video_mnist},
     {"test_whole_model_1_video_inception_v4","test_whole_model_1_video_inception_v4",test_whole_model_1_video_inception_v4},
     {"test_whole_model_1_video_inception_v3","test_whole_model_1_video_inception_v3",test_whole_model_1_video_inception_v3},
