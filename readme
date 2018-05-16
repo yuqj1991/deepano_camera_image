@@ -3,7 +3,9 @@
 [2]测试model：链接: https://pan.baidu.com/s/1xf7sqFbwDdqisszKilpb0w 密码: 8ajp
 [3]linux下SDK中test.cpp下的编译步骤：
    g++ -g -Wall -std=c++11 Fp16Convert.c interpret_output.cpp Region.cpp Common.cpp test.cpp -o test -I /usr/local/include -I /usr/local/include/libusb-1.0 -L /usr/local/lib -L /home/yu/Deepano_SDK_AND_EXAMPLES `pkg-config opencv --cflags --libs` -lpthread -lusb-1.0 -ldp_api
-调用方法：sudo ./dp_test [commond][options]  在主函数中有相关命令：例如打开摄像头：sudo  ./dp_test start_video
+执行：需要将ld_api.so加入到动态库当中，编译和执行是两种不同的
+调用方法：sudo ./dp_test [commond][options]  在主函数中有相关命令：例如打开摄像头：sudo  ./dp_test start_video或者测试tiny-yolo-v2模型，可按如下操作：sudo ./dp_test test_whole_model_1_video_tiny_yolo_v2
+或者其他模型，可参照test.cpp中的2343-2361中提供的接口，具体使用方法如，测试googleNet模型，则sudo ./dp_test test_whole_model_1_video_googleNet
 [4]windows：可在vs2013,2015下编译，安装usb驱动的方法：访问http://zadig.akeo.ie，根据上面提示下载工具并安装驱动
    本套sdk附带的demo_model,目前只能在ubuntu16.04下使用，windows下没有集成开发，但是本套sdk提供了windows版本的dll和lib，是可以在windows下vs里面使用的.
 [5]本SDK相关API简介：
