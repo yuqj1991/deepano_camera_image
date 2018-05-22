@@ -2080,7 +2080,7 @@ void test_whole_model_2_video_model(int argc, char *argv[])
 	fclose(fp);
 	
 	DP_MODEL_NET net_1=DP_TINI_YOLO_NET;
-	dp_register_box_device_cb(box_callback_model_demo, &net_1);	
+	dp_register_box_device_cb(box_callback_model_two_demo, &net_1);	
 	DP_MODEL_NET net_2=DP_GOOGLE_NET;
 	dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
 	dp_register_video_frame_cb(video_callback, &net_1);
