@@ -10,6 +10,8 @@
 #include "mv_types.h"
 #include "interpret_output.h"
 #include "Common.h"
+#include <sys/time.h>
+#include <time.h>
 #include "Region.h"
 #if defined _MSC_VER && defined _WIN64 || defined __linux__
 #define SUPPORT_OPENCV
@@ -37,6 +39,7 @@ int blob_stage_index;
 double Sum_blob_parse_time=0;
 #define UNUSED(x) (void)(x)
 
+timeval start,last_end;
 
 typedef enum NET_CAFFE_TENSFLOW
 {
@@ -1017,8 +1020,11 @@ void box_callback_model_demo(void *result,void *param)
 	  }
               case DP_ALI_FACENET:
           {
+                gettimeofday(&start,NULL);
+                printf("process per frame result spending time:%f ms\n",double((start.tv_sec-last_end.tv_sec)*1000+(start.tv_usec-last_end.tv_usec)/1000));
+                last_end=start;
                 u16* probabilities = (u16*)result;
-         unsigned int resultlen=80*80;
+         unsigned int resultlen=160*160*5;
          float*resultfp32;
          resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
          int img_width=1280;
@@ -2270,9 +2276,9 @@ void test_whole_model_1_video_jieshang(int argc, char *argv[])
 void test_whole_model_1_video_face(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../mvoutput.graph";
+	const char *filename = "../head_m2_s4_no_bn.graph";
 
-	int blob_nums = 1; dp_blob_parm_t parms = {0,640,640,160*160*2};
+	int blob_nums = 1; dp_blob_parm_t parms = {0,368,368,160*160*5*2};
     dp_netMean mean={127,127,127,21.167};
 	if (argc > 0)
 	{
