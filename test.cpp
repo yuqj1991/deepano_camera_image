@@ -31,13 +31,14 @@ int num_box_demo=0;
 std::mutex video_mutex;
 Mat bgr;
 static int num_box=1;
-
 int32_t fps;
 
 double blob_parse_stage[400];
 int blob_stage_index;
 double Sum_blob_parse_time=0;
 #define UNUSED(x) (void)(x)
+
+int index_box=0;
 
 timeval start,last_end;
 
@@ -399,6 +400,7 @@ void box_callback_model_two_demo(void *result,void *param)
            { 
               printf("class:%s, x:%d, y:%d, width:%d, height:%d, probability:%.2f.\n",result[i].category,result[i].x,result[i].y,result[i].width,result[i].height,result[i].probability);
               box_demo[i].x1=result[i].x;
+              
               box_demo[i].x2=result[i].x+result[i].width;
 	          if(box_demo[i].x2>img_width)
 	 	         box_demo[i].x2=img_width;
@@ -412,6 +414,7 @@ void box_callback_model_two_demo(void *result,void *param)
 		 if((result_num<=2)&&(result_num>0))
 		 {
 		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(result_num*sizeof(dp_image_box_t));
+                   
 
 		   for (int i = 0; i < result_num; ++i)
            { 
@@ -434,6 +437,7 @@ void box_callback_model_two_demo(void *result,void *param)
 		 else if(result_num>2)
 		 { 
 		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(2*sizeof(dp_image_box_t));
+                   
 		   for(int i=0;i<result_num;i++)
 		   {
 		      if((result[i].width!=0)&&(result[i].height!=0))
@@ -461,7 +465,7 @@ void box_callback_model_two_demo(void *result,void *param)
     }
 	case DP_SSD_MOBILI_NET:
 	{
-	     char *category[]={"background","aeroplane","bicycle","bird","boat","bottle","bus","car","cat","chair","cow","diningtable",
+	    char *category[]={"background","aeroplane","bicycle","bird","boat","bottle","bus","car","cat","chair","cow","diningtable",
               "dog","horse","motorbike","person","pottedplant","sheep","sofa","train","tvmonitor"};
 		 u16* probabilities = (u16*)result;
          unsigned int resultlen=707;
@@ -472,12 +476,12 @@ void box_callback_model_two_demo(void *result,void *param)
          for (u32 i = 0; i < resultlen; i++)
             resultfp32[i]= f16Tof32(probabilities[i]);
          int num_valid_boxes=int(resultfp32[0]);
+         int index=0;
 		 printf("num_valid_bxes:%d\n",num_valid_boxes);
-		int index=0;
 		 for(int box_index=0;box_index<num_valid_boxes;box_index++)
 		 {
 		   int base_index=7*box_index+7;
-		  if(resultfp32[base_index+6]<0||resultfp32[base_index+6]>=1||resultfp32[base_index+5]<0||resultfp32[base_index+5]>=1||resultfp32[base_index+4]<0||resultfp32[base_index+4]>=1||resultfp32[base_index+3]<0||resultfp32[base_index+3]>=1||resultfp32[base_index+2]>=1||resultfp32[base_index+2]<0||resultfp32[base_index+1]<0)
+		   if(resultfp32[base_index+6]<0||resultfp32[base_index+6]>=1||resultfp32[base_index+5]<0||resultfp32[base_index+5]>=1||resultfp32[base_index+4]<0||resultfp32[base_index+4]>=1||resultfp32[base_index+3]<0||resultfp32[base_index+3]>=1||resultfp32[base_index+2]>=1||resultfp32[base_index+2]<0||resultfp32[base_index+1]<0)
 		   {
 		   	   continue;
 		   }
@@ -582,7 +586,6 @@ void box_callback_model_two_demo(void *result,void *param)
 		 if((num_box_demo<=2)&&(num_box_demo>0))
 		 {
 		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(num_box_demo*sizeof(dp_image_box_t));
-
 		   for (int i = 0; i < num_box_demo; ++i)
                    { 
 			  if(((box_demo[i].x2-box_demo[i].x1)!=0)&&((box_demo[i].y2-box_demo[i].y1)!=0))
@@ -598,7 +601,7 @@ void box_callback_model_two_demo(void *result,void *param)
 				 box_demo_num++;
 			  } 
                    }
-		   dp_send_first_box_image(box_demo_num, box_second);
+		   		dp_send_first_box_image(box_demo_num, box_second);
 		   free(box_second);
 		 }
 		 else if(num_box_demo>2)
@@ -1060,10 +1063,10 @@ void box_callback_model_demo(void *result,void *param)
              Region region_obj;
 	     region_obj.GetDetections(new_data,125,blockwd,blockwd,classes,img_width,img_height,threshold,nms,targetBlockwd,results);
              num_box_demo= results.size();
-             printf("results.size():%d\n",results.size());
+             printf("the second_results.size():%d\n",results.size());
              for (int i = 0; i <  results.size(); ++i)
              { 
-               printf("class:%s, x:%d, y:%d, width:%d, height:%d, probability:%.2f.\n",results[i].name.c_str(),results[i].left,results[i].top,(results[i].right-results[i].left),(results[i].bottom-results[i].top),results[i].confidence);
+               printf("the second_class class:%s, x:%d, y:%d, width:%d, height:%d, probability:%.2f.\n",results[i].name.c_str(),results[i].left,results[i].top,(results[i].right-results[i].left),(results[i].bottom-results[i].top),results[i].confidence);
                box_demo[i].x1=results[i].left;
                box_demo[i].x2=results[i].right;
 	       if(box_demo[i].x2>img_width)
@@ -2032,11 +2035,11 @@ void test_whole_model_1_video_mobilenets(int argc, char *argv[])
 void test_whole_model_2_video_model(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../tini_yolo.blob";
+	const char *filename = "../SSD_MobileNet.blob";
 	const char *filename2 = "../google.blob";
 
-	int blob_nums = 2; dp_blob_parm_t parms[2] = {{0,448,448,1470*2 },{0,224,224,1000*2}};
-    dp_netMean mean[2]={{0,0,0,255},{104.0068,116.6886,122.6789,1}};
+	int blob_nums = 2; dp_blob_parm_t parms[2] = {{0,300,300,707*2 },{0,224,224,1000*2}};
+    dp_netMean mean[2]={{127.5,127.5,127.5,127.5},{104.0068,116.6886,122.6789,1}};
 
 	test_update_model_parems(blob_nums, parms);
     dp_set_blob_mean_std(blob_nums,mean);
@@ -2079,7 +2082,7 @@ void test_whole_model_2_video_model(int argc, char *argv[])
     }
 	fclose(fp);
 	
-	DP_MODEL_NET net_1=DP_TINI_YOLO_NET;
+	DP_MODEL_NET net_1=DP_SSD_MOBILI_NET;
 	dp_register_box_device_cb(box_callback_model_two_demo, &net_1);	
 	DP_MODEL_NET net_2=DP_GOOGLE_NET;
 	dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
@@ -2190,7 +2193,7 @@ void test_whole_model_2_video_tiny_yolo_v2(int argc, char *argv[])
 	DP_MODEL_NET net_1=DP_TINY_YOLO_V2_NET;
 	dp_register_box_device_cb(box_callback_model_two_demo, &net_1);	
 	DP_MODEL_NET net_2=DP_TINY_YOLO_V2_NET;
-	//dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
+	dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
 	dp_register_video_frame_cb(video_callback, &net_1);
         dp_register_fps_device_cb(fps_callback,&net_1);
         dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
