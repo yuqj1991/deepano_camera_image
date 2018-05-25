@@ -15,6 +15,7 @@
         dp_set_blob_image_size(&BLOB_IMAGE_SIZE);//自定义ROI
 	test_update_model_parems(blob_nums, parms);//传入模型参数
         dp_set_blob_mean_std(blob_nums,mean);//传入mean和std
+请使用新的升级固件：cdk_FLIC_1xOV5658_TF.mvcmd（此为通用固件，如客户有特殊需求会单独邮件回复！）
 -------------------------------
 [1]本套模组（ma2450）集有摄像头ov5658,可用于解析caffemodel的大部分算法模型，使用之前，需要使用ncsdk的转换工具mvNCCompiler，将caffemodel转化为mv模组可用的blob格式数据.
 [2]测试model：链接: https://pan.baidu.com/s/1xf7sqFbwDdqisszKilpb0w 密码: 8ajp
