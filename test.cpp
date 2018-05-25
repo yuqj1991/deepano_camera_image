@@ -12,7 +12,7 @@
 #include "interpret_output.h"
 #include "Common.h"
 #include "Region.h"
-#if defined _MSC_VER && defined _WIN64 || defined __linux__
+#if defined _MSC_VER && defined _WIN64 || defined __linux__ || defined _WIN32
 #define SUPPORT_OPENCV
 #endif
 
@@ -2008,7 +2008,7 @@ void test_whole_model_1_video_mnist(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
         dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
