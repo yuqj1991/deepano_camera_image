@@ -1,17 +1,16 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <thread>
+#include <pthread.h>  
 #include <math.h>
 #include <mutex>
 #include <chrono>
+#include <signal.h>
 #include "dp_api.h"
 #include "Fp16Convert.h"
 #include "mv_types.h"
 #include "interpret_output.h"
 #include "Common.h"
-#include <sys/time.h>
-#include <time.h>
 #include "Region.h"
 #if defined _MSC_VER && defined _WIN64 || defined __linux__
 #define SUPPORT_OPENCV
@@ -23,24 +22,29 @@
 using namespace cv;
 #endif
 
+#ifndef Blob_Yolo_PRIORITY
+#define Blob_Yolo_PRIORITY		0
+#endif
+
+
 using namespace std;
 char **label_cagerioes;
-dp_image_box_t box_demo[1000];
+dp_image_box_t box_demo[100];
 char categoles[100][20];
 int num_box_demo=0;
 std::mutex video_mutex;
 Mat bgr;
 static int num_box=1;
+
 int32_t fps;
 
 double blob_parse_stage[400];
 int blob_stage_index;
 double Sum_blob_parse_time=0;
+dp_image_box_t box_second[2];
+dp_image_box_t BLOB_IMAGE_SIZE={0,1280,0,960};
+int dp_image_box_mask=0;
 #define UNUSED(x) (void)(x)
-
-int index_box=0;
-
-timeval start,last_end;
 
 typedef enum NET_CAFFE_TENSFLOW
 {
@@ -88,6 +92,70 @@ max_age argsort_age(float * a,int length)
   }
   return max;
 }
+
+
+void sighandler(int signum)  
+{
+	switch(signum)
+	{
+		case SIGABRT:
+		{
+			dp_send_stop_cmd();
+			int ret = dp_uninit();
+			if (ret != 0) {
+				printf("dp_uninit failed!");			
+			}
+			printf("捕获信号 %d，程序异常中断，跳出...\n", signum);  
+			exit(1);
+			break;  
+		}
+		case SIGFPE:
+		{
+			dp_send_stop_cmd();
+			int ret = dp_uninit();
+			if (ret != 0) {
+				printf("dp_uninit failed!");			
+			}
+			printf("捕获信号 %d，算数出错，如为0,跳出...\n", signum);  
+			exit(1);
+			break;  
+		}
+		case SIGILL:
+		{
+			dp_send_stop_cmd();
+			int ret = dp_uninit();
+			if (ret != 0) {
+				printf("dp_uninit failed!");			
+			}
+			printf("捕获信号 %d，非法函数映象，如非法指令，跳出...\n", signum);  
+			exit(1);
+			break;  
+		}
+		case SIGINT:
+		{
+			dp_send_stop_cmd();
+			int ret = dp_uninit();
+			if (ret != 0) {
+				printf("dp_uninit failed!");			
+			}
+			printf("捕获信号 %d，程序ctrl_c中断，跳出...\n", signum);  
+			exit(1);
+			break;  
+		}
+		case SIGSEGV:
+		{
+			dp_send_stop_cmd();
+			int ret = dp_uninit();
+			if (ret != 0) {
+				printf("dp_uninit failed!");			
+			}
+			printf("捕获信号 %d，内存地址访问出错，跳出...\n", signum);  
+			exit(1);
+			break;  
+		}
+	}  
+}  
+
 
 void test_ping(int argc, char *argv[])
 {
@@ -189,7 +257,7 @@ void blob_parse_callback(double *buffer_fps,void *param)
 void video_callback(dp_img_t *img, void *param)
 {
 	Mat myuv(img->height + img->height / 2, img->width, CV_8UC1, img->img);
-	video_mutex.lock();
+	//video_mutex.lock();
 	cvtColor(myuv, bgr, CV_YUV2BGR_I420, 0);
 	DP_MODEL_NET model=*((DP_MODEL_NET*)param);
 	switch (model)
@@ -205,7 +273,6 @@ void video_callback(dp_img_t *img, void *param)
              string buffer="fps:"+std::to_string(fps);
              cv::putText(bgr,buffer.c_str(),cvPoint(40,40),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
 	     break;
-             num_box_demo=0;
 	  }
 	  case DP_SSD_MOBILI_NET:
 	  {
@@ -217,7 +284,6 @@ void video_callback(dp_img_t *img, void *param)
                 string buffer="fps:"+std::to_string(fps);
                 cv::putText(bgr,buffer.c_str(),cvPoint(40,40),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
              break;
-             num_box_demo=0;
 	  }
           case DP_TINY_YOLO_V2_NET:
 	  {
@@ -229,7 +295,6 @@ void video_callback(dp_img_t *img, void *param)
                 string buffer="fps:"+std::to_string(fps);
                 cv::putText(bgr,buffer.c_str(),cvPoint(40,40),cv::FONT_HERSHEY_PLAIN,2,CV_RGB(0, 255, 0),2,8);
              break;
-             num_box_demo=0;
 	  }
           default:
           {
@@ -238,7 +303,7 @@ void video_callback(dp_img_t *img, void *param)
 	     break;
           }	  
       }
-      video_mutex.unlock();
+	//video_mutex.unlock();
 }
 
 void test_start_video(int argc, char *argv[])
@@ -400,7 +465,6 @@ void box_callback_model_two_demo(void *result,void *param)
            { 
               printf("class:%s, x:%d, y:%d, width:%d, height:%d, probability:%.2f.\n",result[i].category,result[i].x,result[i].y,result[i].width,result[i].height,result[i].probability);
               box_demo[i].x1=result[i].x;
-              
               box_demo[i].x2=result[i].x+result[i].width;
 	          if(box_demo[i].x2>img_width)
 	 	         box_demo[i].x2=img_width;
@@ -413,8 +477,7 @@ void box_callback_model_two_demo(void *result,void *param)
 		 int box_demo_num=0;
 		 if((result_num<=2)&&(result_num>0))
 		 {
-		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(result_num*sizeof(dp_image_box_t));
-                   
+		   //dp_image_box_t *box_second=(dp_image_box_t*)malloc(result_num*sizeof(dp_image_box_t));
 
 		   for (int i = 0; i < result_num; ++i)
            { 
@@ -431,13 +494,13 @@ void box_callback_model_two_demo(void *result,void *param)
 				 box_demo_num++;
 			  } 
            }
-		   dp_send_first_box_image(box_demo_num, box_second);
-		   free(box_second);
+		   //dp_send_first_box_image(box_demo_num, box_second);
+		   //free(box_second);
+                   dp_image_box_mask=1;
 		 }
 		 else if(result_num>2)
 		 { 
-		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(2*sizeof(dp_image_box_t));
-                   
+		   //dp_image_box_t *box_second=(dp_image_box_t*)malloc(2*sizeof(dp_image_box_t));
 		   for(int i=0;i<result_num;i++)
 		   {
 		      if((result[i].width!=0)&&(result[i].height!=0))
@@ -457,15 +520,16 @@ void box_callback_model_two_demo(void *result,void *param)
 			     break;
 			  }
 		   	}
-		   dp_send_first_box_image(2, box_second);		   
-		   free(box_second);
+		   //dp_send_first_box_image(2, box_second);		   
+		   //free(box_second);
+                   dp_image_box_mask=1;
 		 }         
         free(resultfp32);
 		break;
     }
 	case DP_SSD_MOBILI_NET:
 	{
-	    char *category[]={"background","aeroplane","bicycle","bird","boat","bottle","bus","car","cat","chair","cow","diningtable",
+	     char *category[]={"background","aeroplane","bicycle","bird","boat","bottle","bus","car","cat","chair","cow","diningtable",
               "dog","horse","motorbike","person","pottedplant","sheep","sofa","train","tvmonitor"};
 		 u16* probabilities = (u16*)result;
          unsigned int resultlen=707;
@@ -586,6 +650,7 @@ void box_callback_model_two_demo(void *result,void *param)
 		 if((num_box_demo<=2)&&(num_box_demo>0))
 		 {
 		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(num_box_demo*sizeof(dp_image_box_t));
+
 		   for (int i = 0; i < num_box_demo; ++i)
                    { 
 			  if(((box_demo[i].x2-box_demo[i].x1)!=0)&&((box_demo[i].y2-box_demo[i].y1)!=0))
@@ -601,8 +666,9 @@ void box_callback_model_two_demo(void *result,void *param)
 				 box_demo_num++;
 			  } 
                    }
-		   		dp_send_first_box_image(box_demo_num, box_second);
+		   dp_send_first_box_image(box_demo_num, box_second);
 		   free(box_second);
+                   dp_image_box_mask=1;
 		 }
 		 else if(num_box_demo>2)
 		 { 
@@ -628,6 +694,7 @@ void box_callback_model_two_demo(void *result,void *param)
 		    }
 		   dp_send_first_box_image(2, box_second);		   
 		   free(box_second);
+                   dp_image_box_mask=1;
                  }
             free(resultfp32);
             free(new_data);	 
@@ -637,8 +704,6 @@ void box_callback_model_two_demo(void *result,void *param)
 		break;
    }
 }
-
-
 
 void box_callback_model_demo(void *result,void *param)
 {
@@ -686,6 +751,34 @@ void box_callback_model_demo(void *result,void *param)
 		 printf("the age range is:%s and the confidence of %.2f\n",gender_list[pre_gender.index],pre_gender.max_predected);
 		 free(resultfp32);
 		 break;
+	  }
+	  case DP_ALEX_NET:
+	  {
+	    u16* probabilities=(u16*)result;
+		unsigned int resultlen=1000;
+		float *resultfp32=(float *)malloc(resultlen*sizeof(*resultfp32));
+		for(u32 i=0;i<resultlen;i++)
+			resultfp32[i]=f16Tof32(probabilities[i]);
+		float temp_predeiction=0.0;
+		int index_temp=0;
+		for(int i=0;i<5;i++)
+		{
+		   temp_predeiction=resultfp32[i];
+		   index_temp=i;
+		   for(int j=i+1;j<resultlen;j++)
+		   {
+		     if(temp_predeiction<=resultfp32[j])
+		     {
+		        temp_predeiction=resultfp32[j];
+				index_temp=j;
+		     }
+		   }
+		   resultfp32[index_temp]=resultfp32[i];
+		   resultfp32[i]=temp_predeiction;
+   		   printf("prediction classes: %sand the probabilityes:%0.3f\n",label_cagerioes[index_temp],temp_predeiction);
+		}
+		free(resultfp32);
+		break;
 	  }
 	  case DP_GOOGLE_NET:
 	  {
@@ -838,15 +931,17 @@ void box_callback_model_demo(void *result,void *param)
 	  }
 	  case DP_INCEPTION_V1:
 	  {
-		u16* probabilities = (u16*)result;
-         	unsigned int resultlen=1001;
-         	float*resultfp32;
-         	resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-         	for (u32 i = 0; i < resultlen; i++)
-         	   resultfp32[i]= f16Tof32(probabilities[i]);
+		 u16* probabilities = (u16*)result;
+         unsigned int resultlen=1001;
+         float*resultfp32;
+         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+         int img_width=1280;
+         int img_height=960;
+         for (u32 i = 0; i < resultlen; i++)
+            resultfp32[i]= f16Tof32(probabilities[i]);
 		 float temp_predeiction=0.0;
 		 int index_temp=0;
-         	 for(int i=0;i<5;i++)
+         for(int i=0;i<5;i++)
 		 {
 		   temp_predeiction=resultfp32[i];
 		   index_temp=i;
@@ -860,25 +955,24 @@ void box_callback_model_demo(void *result,void *param)
 		   }
 		   resultfp32[index_temp]=resultfp32[i];
 		   resultfp32[i]=temp_predeiction;
-		   printf(" probabilityes:%0.3f,index:%d\n",temp_predeiction,index_temp);
-   		   //printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
+   		   printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
 		 }
-         	free(resultfp32);
-		break;
+         free(resultfp32);
+		 break;
 	  }
 	   case DP_INCEPTION_V2:
 	  {
 		 u16* probabilities = (u16*)result;
-	         unsigned int resultlen=1001;
-	         float*resultfp32;
-        	 resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-        	 int img_width=1280;
-        	 int img_height=960;
-        	 for (u32 i = 0; i < resultlen; i++)
-        	    resultfp32[i]= f16Tof32(probabilities[i]);
+         unsigned int resultlen=1001;
+         float*resultfp32;
+         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+         int img_width=1280;
+         int img_height=960;
+         for (u32 i = 0; i < resultlen; i++)
+            resultfp32[i]= f16Tof32(probabilities[i]);
 		 float temp_predeiction=0.0;
 		 int index_temp=0;
-        	 for(int i=0;i<5;i++)
+         for(int i=0;i<5;i++)
 		 {
 		   temp_predeiction=resultfp32[i];
 		   index_temp=i;
@@ -892,53 +986,24 @@ void box_callback_model_demo(void *result,void *param)
 		   }
 		   resultfp32[index_temp]=resultfp32[i];
 		   resultfp32[i]=temp_predeiction;
-		   printf(" probabilityes:%0.3f,index:%d\n",temp_predeiction,index_temp);
-   		   //printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
+   		   printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
 		 }
-        	 free(resultfp32);
+         free(resultfp32);
 		 break;
 	  }
-	  case DP_INCEPTION_V3:
+	   case DP_INCEPTION_V3:
 	  {
-		u16* probabilities = (u16*)result;
-         	unsigned int resultlen=1001;
-         	float*resultfp32;
-         	resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-         	for (u32 i = 0; i < resultlen; i++)
-            		resultfp32[i]= f16Tof32(probabilities[i]);
-         	float temp_predeiction=0.0;
-	 	int index_temp=0;
-         	for(int i=0;i<5;i++)
-		{
-		   temp_predeiction=resultfp32[i];
-		   index_temp=i;
-		   for(int j=i+1;j<resultlen;j++)
-		   {
-		     if(temp_predeiction<=resultfp32[j])
-		     {
-		        temp_predeiction=resultfp32[j];
-				index_temp=j;
-		     }
-		   }
-		   resultfp32[index_temp]=resultfp32[i];
-		   resultfp32[i]=temp_predeiction;
-		   printf(" probabilityes:%0.3f,index:%d\n",temp_predeiction,index_temp);
-   		   //printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
-		}
-         	free(resultfp32);
-		 break;
-	  }
-	case DP_INCEPTION_V4:
-	{
 		 u16* probabilities = (u16*)result;
-        	 unsigned int resultlen=1001;
-        	 float*resultfp32;
-        	 resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-        	 for (u32 i = 0; i < resultlen; i++)
-        	    resultfp32[i]= f16Tof32(probabilities[i]);
+         unsigned int resultlen=1001;
+         float*resultfp32;
+         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+         int img_width=1280;
+         int img_height=960;
+         for (u32 i = 0; i < resultlen; i++)
+            resultfp32[i]= f16Tof32(probabilities[i]);
 		 float temp_predeiction=0.0;
 		 int index_temp=0;
-	         for(int i=0;i<5;i++)
+         for(int i=0;i<5;i++)
 		 {
 		   temp_predeiction=resultfp32[i];
 		   index_temp=i;
@@ -952,8 +1017,38 @@ void box_callback_model_demo(void *result,void *param)
 		   }
 		   resultfp32[index_temp]=resultfp32[i];
 		   resultfp32[i]=temp_predeiction;
-		   printf(" probabilityes:%0.3f,index:%d\n",temp_predeiction,index_temp);
-   		   //printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
+   		   printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
+		 }
+         free(resultfp32);
+		 break;
+	  }
+		case DP_INCEPTION_V4:
+	  {
+		 u16* probabilities = (u16*)result;
+         unsigned int resultlen=1001;
+         float*resultfp32;
+         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+         int img_width=1280;
+         int img_height=960;
+         for (u32 i = 0; i < resultlen; i++)
+            resultfp32[i]= f16Tof32(probabilities[i]);
+		 float temp_predeiction=0.0;
+		 int index_temp=0;
+         for(int i=0;i<5;i++)
+		 {
+		   temp_predeiction=resultfp32[i];
+		   index_temp=i;
+		   for(int j=i+1;j<resultlen;j++)
+		   {
+		     if(temp_predeiction<=resultfp32[j])
+		     {
+		        temp_predeiction=resultfp32[j];
+				index_temp=j;
+		     }
+		   }
+		   resultfp32[index_temp]=resultfp32[i];
+		   resultfp32[i]=temp_predeiction;
+   		   printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
 		 }
          free(resultfp32);
 		 break;
@@ -1023,11 +1118,8 @@ void box_callback_model_demo(void *result,void *param)
 	  }
               case DP_ALI_FACENET:
           {
-                gettimeofday(&start,NULL);
-                printf("process per frame result spending time:%f ms\n",double((start.tv_sec-last_end.tv_sec)*1000+(start.tv_usec-last_end.tv_usec)/1000));
-                last_end=start;
                 u16* probabilities = (u16*)result;
-         unsigned int resultlen=160*160*5;
+         unsigned int resultlen=80*80;
          float*resultfp32;
          resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
          int img_width=1280;
@@ -1063,10 +1155,10 @@ void box_callback_model_demo(void *result,void *param)
              Region region_obj;
 	     region_obj.GetDetections(new_data,125,blockwd,blockwd,classes,img_width,img_height,threshold,nms,targetBlockwd,results);
              num_box_demo= results.size();
-             printf("the second_results.size():%d\n",results.size());
+             printf("second_results.size():%d\n",results.size());
              for (int i = 0; i <  results.size(); ++i)
              { 
-               printf("the second_class class:%s, x:%d, y:%d, width:%d, height:%d, probability:%.2f.\n",results[i].name.c_str(),results[i].left,results[i].top,(results[i].right-results[i].left),(results[i].bottom-results[i].top),results[i].confidence);
+               printf("second_class:%s, x:%d, y:%d, width:%d, height:%d, probability:%.2f.\n",results[i].name.c_str(),results[i].left,results[i].top,(results[i].right-results[i].left),(results[i].bottom-results[i].top),results[i].confidence);
                box_demo[i].x1=results[i].left;
                box_demo[i].x2=results[i].right;
 	       if(box_demo[i].x2>img_width)
@@ -1108,7 +1200,7 @@ void test_whole_model_2_video_model_jingdong(int argc, char *argv[])
 
 	int blob_nums = 2; dp_blob_parm_t parms[2] = {{0,128,128,707*2 },{0,114,114,128*2}};
         dp_netMean mean[2]={{127.5,127.5,127.5,127.5},{104,117,123,255}};
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, parms);
         dp_set_blob_mean_std(blob_nums,mean);
 	ret = dp_update_model(filename);
@@ -1154,6 +1246,7 @@ void test_whole_model_2_video_model_jingdong(int argc, char *argv[])
 	destroyWindow(win_name);
 }
 
+
 void test_whole_model_1_video_googleNet(int argc, char *argv[])
 {
 	int ret;
@@ -1172,7 +1265,7 @@ void test_whole_model_1_video_googleNet(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
         dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
@@ -1183,30 +1276,30 @@ void test_whole_model_1_video_googleNet(int argc, char *argv[])
 		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
 	}
 	FILE *fp=fopen("synset_words.txt","r");
-    if(fp==NULL)
-    {
-     printf("can not open the file\n");
-    }
-    label_cagerioes=(char **)malloc(1000*sizeof(char*));
-    char buffer[500];
-    int index_label=0;
-    while(fgets(buffer,500,fp)!=NULL)
-    {
-      label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-      memcpy(label_cagerioes[index_label],buffer,500);
-      for(int m=0;m<500;m++)
-      {
-        label_cagerioes[index_label][m]=label_cagerioes[index_label][m+10];
-        if(m==489)
+        if(fp==NULL)
         {
-            break;
+                printf("can not open the file\n");
         }
-      }
-	  label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-      index_label++;
-    }
+        label_cagerioes=(char **)malloc(1000*sizeof(char*));
+        char buffer[500];
+        int index_label=0;
+        while(fgets(buffer,500,fp)!=NULL)
+        {
+                label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
+                memcpy(label_cagerioes[index_label],buffer,500);
+                for(int m=0;m<500;m++)
+                {
+                        label_cagerioes[index_label][m]=label_cagerioes[index_label][m+10];
+                        if(m==489)
+                        {
+                                break;
+                        }
+                }
+	        label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
+                index_label++;
+        }
 	fclose(fp);
-    DP_MODEL_NET net=DP_GOOGLE_NET;
+        DP_MODEL_NET net=DP_GOOGLE_NET;
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
         dp_register_fps_device_cb(fps_callback,&net);
@@ -1251,9 +1344,9 @@ void test_whole_model_1_video_TinyYoloNet(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
-    dp_set_blob_mean_std(blob_nums,&mean);
+        dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -1305,9 +1398,9 @@ void test_whole_model_1_video_AgeNet(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
-    dp_set_blob_mean_std(blob_nums,&mean);
+        dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -1361,9 +1454,9 @@ void test_whole_model_1_video_gendernet(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
-    dp_set_blob_mean_std(blob_nums,&mean);
+        dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -1373,7 +1466,7 @@ void test_whole_model_1_video_gendernet(int argc, char *argv[])
 	}
 	
 	
-    DP_MODEL_NET net=DP_GENDER_NET;
+        DP_MODEL_NET net=DP_GENDER_NET;
 	dp_register_video_frame_cb(video_callback, &net);
 	dp_register_box_device_cb(box_callback_model_demo,&net);
 	dp_register_fps_device_cb(fps_callback,&net);
@@ -1405,7 +1498,7 @@ void test_whole_model_1_video_Resnet_18(int argc, char *argv[])
 	const char *filename = "../Resnet.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {0,224,224,1000*2};
-    dp_netMean mean={104.00698793,116.66876762,122.67891434,1};
+        dp_netMean mean={104.00698793,116.66876762,122.67891434,1};
 	if (argc > 0)
 	{
 		filename = argv[0];
@@ -1417,9 +1510,9 @@ void test_whole_model_1_video_Resnet_18(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
-    dp_set_blob_mean_std(blob_nums,&mean);
+        dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -1427,32 +1520,31 @@ void test_whole_model_1_video_Resnet_18(int argc, char *argv[])
 	else {
 		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
 	}
-    FILE *fp=fopen("synset_words.txt","r");
-    if(fp==NULL)
-    {
-     printf("can not open the file\n");
-    }
-    label_cagerioes=(char **)malloc(1000*sizeof(char*));
-    char buffer[500];
-    int index_label=0;
-    while(fgets(buffer,500,fp)!=NULL)
-    {
-      label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-      memcpy(label_cagerioes[index_label],buffer,500);
-      for(int m=0;m<500;m++)
-      {
-        label_cagerioes[index_label][m]=label_cagerioes[index_label][m+10];
-        if(m==489)
+        FILE *fp=fopen("synset_words.txt","r");
+        if(fp==NULL)
         {
-            break;
+                printf("can not open the file\n");
         }
-      }
-	  label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-      index_label++;
-    }
-	fclose(fp);
-	
-    DP_MODEL_NET net=DP_RES_NET;
+        label_cagerioes=(char **)malloc(1000*sizeof(char*));
+        char buffer[500];
+        int index_label=0;
+        while(fgets(buffer,500,fp)!=NULL)
+        {
+                label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
+                memcpy(label_cagerioes[index_label],buffer,500);
+                for(int m=0;m<500;m++)
+                {
+                        label_cagerioes[index_label][m]=label_cagerioes[index_label][m+10];
+                        if(m==489)
+                        {
+                                break;
+                        }
+                }
+	        label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
+                index_label++;
+        }
+	fclose(fp);	
+        DP_MODEL_NET net=DP_RES_NET;
 	dp_register_box_device_cb(box_callback_model_demo,&net);
 	dp_register_video_frame_cb(video_callback, &net);
         dp_register_fps_device_cb(fps_callback,&net);
@@ -1496,9 +1588,9 @@ void test_whole_model_1_video_SqueezeNet(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
-    dp_set_blob_mean_std(blob_nums,&mean);
+        dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -1508,28 +1600,28 @@ void test_whole_model_1_video_SqueezeNet(int argc, char *argv[])
 	}
 
 	FILE *fp=fopen("synset_words.txt","r");
-    if(fp==NULL)
-    {
-     printf("can not open the file\n");
-    }
-    label_cagerioes=(char **)malloc(1000*sizeof(char*));
-    char buffer[500];
-    int index_label=0;
-    while(fgets(buffer,500,fp)!=NULL)
-    {
-      label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-      memcpy(label_cagerioes[index_label],buffer,500);
-      for(int m=0;m<500;m++)
-      {
-        label_cagerioes[index_label][m]=label_cagerioes[index_label][m+10];
-        if(m==489)
+        if(fp==NULL)
         {
-            break;
+                printf("can not open the file\n");
         }
-      }
-	  label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-      index_label++;
-    }
+        label_cagerioes=(char **)malloc(1000*sizeof(char*));
+        char buffer[500];
+        int index_label=0;
+        while(fgets(buffer,500,fp)!=NULL)
+        {
+                label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
+                memcpy(label_cagerioes[index_label],buffer,500);
+                for(int m=0;m<500;m++)
+                {
+                        label_cagerioes[index_label][m]=label_cagerioes[index_label][m+10];
+                        if(m==489)
+                        {
+                                break;
+                        }
+                }
+	        label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
+                index_label++;
+        }
 	fclose(fp);
 	DP_MODEL_NET net=DP_SQUEEZE_NET;
 	dp_register_box_device_cb(box_callback_model_demo,&net);
@@ -1564,7 +1656,7 @@ void test_whole_model_1_video_SSD_MobileNet(int argc, char *argv[])
 	const char *filename = "../SSD_MobileNet.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {0,300,300,707*2};
-    dp_netMean mean={127.5,127.5,127.5,127.5};
+        dp_netMean mean={127.5,127.5,127.5,127.5};
 	if (argc > 0)
 	{
 		filename = argv[0];
@@ -1576,9 +1668,9 @@ void test_whole_model_1_video_SSD_MobileNet(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
-    dp_set_blob_mean_std(blob_nums,&mean);
+        dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -1619,7 +1711,7 @@ void test_whole_model_1_video_inception_v1(int argc, char *argv[])
 	const char *filename = "../inception_v1";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {1,223,223,1001*2};
-    dp_netMean mean={128,128,128,128};
+        dp_netMean mean={128,128,128,128};
 	if (argc > 0)
 	{
 		filename = argv[0];
@@ -1631,9 +1723,9 @@ void test_whole_model_1_video_inception_v1(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
-    dp_set_blob_mean_std(blob_nums,&mean);
+        dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -1642,20 +1734,20 @@ void test_whole_model_1_video_inception_v1(int argc, char *argv[])
 		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
 	}
 	FILE *fp=fopen("categories.txt","r");
-    if(fp==NULL)
-    {
-     printf("can not open the file\n");
-    }
-    label_cagerioes=(char **)malloc(1002*sizeof(char*));
-    char buffer[500];
-    int index_label=0;
-    while(fgets(buffer,500,fp)!=NULL)
-    {
-      label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-      memcpy(label_cagerioes[index_label],buffer,500);
-	  label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-      index_label++;
-    }
+        if(fp==NULL)
+        {
+                printf("can not open the file\n");
+        }
+        label_cagerioes=(char **)malloc(1002*sizeof(char*));
+        char buffer[500];
+        int index_label=0;
+        while(fgets(buffer,500,fp)!=NULL)
+        {
+                label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
+                memcpy(label_cagerioes[index_label],buffer,500);
+	        label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
+                index_label++;
+        }
 	fclose(fp);
 	DP_MODEL_NET net=DP_INCEPTION_V1;
 	dp_register_video_frame_cb(video_callback, &net);
@@ -1689,7 +1781,7 @@ void test_whole_model_1_video_inception_v2(int argc, char *argv[])
 	int ret;
 	const char *filename = "../inception_v2";
 
-	int blob_nums = 1; dp_blob_parm_t parms = {1,224,224,1001*2};
+	int blob_nums = 1; dp_blob_parm_t parms = {0,224,224,1001*2};
     dp_netMean mean={128,128,128,128};
 	if (argc > 0)
 	{
@@ -1702,9 +1794,9 @@ void test_whole_model_1_video_inception_v2(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
-    dp_set_blob_mean_std(blob_nums,&mean);
+        dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -1762,7 +1854,7 @@ void test_whole_model_1_video_inception_v3(int argc, char *argv[])
 	const char *filename = "../inception_v3";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {1,299,299,1001*2};
-    dp_netMean mean={128,128,128,128};
+        dp_netMean mean={128,128,128,128};
 	if (argc > 0)
 	{
 		filename = argv[0];
@@ -1774,9 +1866,9 @@ void test_whole_model_1_video_inception_v3(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
-    dp_set_blob_mean_std(blob_nums,&mean);
+        dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -1795,10 +1887,10 @@ void test_whole_model_1_video_inception_v3(int argc, char *argv[])
 	int index_label=0;
 	while(fgets(buffer,500,fp)!=NULL)
 	{
-	   label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-	   memcpy(label_cagerioes[index_label],buffer,500);
-	   label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-	   index_label++;
+		label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
+	     memcpy(label_cagerioes[index_label],buffer,500);
+		 label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
+		 index_label++;
 	}
 	fclose(fp);
 	DP_MODEL_NET net=DP_INCEPTION_V3;
@@ -1833,7 +1925,7 @@ void test_whole_model_1_video_inception_v4(int argc, char *argv[])
 	const char *filename = "../inception_v4";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {1,299,299,1001*2};
-    dp_netMean mean={128,128,128,128};
+        dp_netMean mean={128,128,128,128};
 	if (argc > 0)
 	{
 		filename = argv[0];
@@ -1845,9 +1937,9 @@ void test_whole_model_1_video_inception_v4(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
-	dp_set_blob_mean_std(blob_nums,&mean);
+        dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -1866,10 +1958,10 @@ void test_whole_model_1_video_inception_v4(int argc, char *argv[])
 	int index_label=0;
 	while(fgets(buffer,500,fp)!=NULL)
 	{
-	   label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-	   memcpy(label_cagerioes[index_label],buffer,500);
-	   label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-	   index_label++;
+		label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
+	     memcpy(label_cagerioes[index_label],buffer,500);
+		 label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
+		 index_label++;
 	}
 	fclose(fp);
 	DP_MODEL_NET net=DP_INCEPTION_V4;
@@ -1960,7 +2052,7 @@ void test_whole_model_1_video_mobilenets(int argc, char *argv[])
 	const char *filename = "../mobilenets.blob";
 
 	int blob_nums = 1; dp_blob_parm_t parms = {1,224,224,1001*2};
-    dp_netMean mean={0,0,0,255};
+        dp_netMean mean={0,0,0,255};
 	if (argc > 0)
 	{
 		filename = argv[0];
@@ -1972,7 +2064,7 @@ void test_whole_model_1_video_mobilenets(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
         dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
@@ -1983,28 +2075,28 @@ void test_whole_model_1_video_mobilenets(int argc, char *argv[])
 		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
 	}
 	FILE *fp=fopen("labels.txt","r");
-    if(fp==NULL)
-    {
-     printf("can not open the file\n");
-    }
-    label_cagerioes=(char **)malloc(1000*sizeof(char*));
-    char buffer[500];
-    int index_label=0;
-    while(fgets(buffer,500,fp)!=NULL)
-    {
-      label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-      memcpy(label_cagerioes[index_label],buffer,500);
-      for(int m=0;m<500;m++)
-      {
-        label_cagerioes[index_label][m]=label_cagerioes[index_label][m+3];
-        if(m==496)
+        if(fp==NULL)
         {
-            break;
+                printf("can not open the file\n");
         }
-      }
-	  label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-      index_label++;
-    }
+        label_cagerioes=(char **)malloc(1000*sizeof(char*));
+        char buffer[500];
+        int index_label=0;
+        while(fgets(buffer,500,fp)!=NULL)
+        {
+                label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
+                memcpy(label_cagerioes[index_label],buffer,500);
+                for(int m=0;m<500;m++)
+                {
+                        label_cagerioes[index_label][m]=label_cagerioes[index_label][m+3];
+                        if(m==496)
+                        {
+                                break;
+                        }
+                }
+	        label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
+                index_label++;
+        }
 	fclose(fp);	
 	DP_MODEL_NET net=DP_MOBILINERS_NET;
 	dp_register_video_frame_cb(video_callback, &net);
@@ -2039,10 +2131,10 @@ void test_whole_model_2_video_model(int argc, char *argv[])
 	const char *filename2 = "../google.blob";
 
 	int blob_nums = 2; dp_blob_parm_t parms[2] = {{0,300,300,707*2 },{0,224,224,1000*2}};
-    dp_netMean mean[2]={{127.5,127.5,127.5,127.5},{104.0068,116.6886,122.6789,1}};
-
+        dp_netMean mean[2]={{127.5,127.5,127.5,127.5},{104.0068,116.6886,122.6789,1}};
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, parms);
-    dp_set_blob_mean_std(blob_nums,mean);
+        dp_set_blob_mean_std(blob_nums,mean);
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -2058,32 +2150,31 @@ void test_whole_model_2_video_model(int argc, char *argv[])
 		printf("Test dp_update_model_2(%s) failed ! ret=%d\n", filename2, ret);
 	}
 	FILE *fp=fopen("synset_words.txt","r");
-    if(fp==NULL)
-    {
-     printf("can not open the file\n");
-    }
-    label_cagerioes=(char **)malloc(1000*sizeof(char*));
-    char buffer[500];
-    int index_label=0;
-    while(fgets(buffer,500,fp)!=NULL)
-    {
-      label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-      memcpy(label_cagerioes[index_label],buffer,500);
-      for(int m=0;m<500;m++)
-      {
-        label_cagerioes[index_label][m]=label_cagerioes[index_label][m+10];
-        if(m==489)
+        if(fp==NULL)
         {
-            break;
+                printf("can not open the file\n");
         }
-      }
-	  label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-      index_label++;
-    }
-	fclose(fp);
-	
+        label_cagerioes=(char **)malloc(1000*sizeof(char*));
+        char buffer[500];
+        int index_label=0;
+        while(fgets(buffer,500,fp)!=NULL)
+        {
+                label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
+                memcpy(label_cagerioes[index_label],buffer,500);
+                for(int m=0;m<500;m++)
+                {
+                        label_cagerioes[index_label][m]=label_cagerioes[index_label][m+10];
+                        if(m==489)
+                        {
+                                break;
+                        }
+                }
+	        label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
+                index_label++;
+        }
+	fclose(fp);	
 	DP_MODEL_NET net_1=DP_SSD_MOBILI_NET;
-	dp_register_box_device_cb(box_callback_model_two_demo, &net_1);	
+	dp_register_box_device_cb(box_callback_model_demo, &net_1);	
 	DP_MODEL_NET net_2=DP_GOOGLE_NET;
 	dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
 	dp_register_video_frame_cb(video_callback, &net_1);
@@ -2128,7 +2219,7 @@ void test_whole_model_1_video_tiny_yolo_v2(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
         dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
@@ -2171,10 +2262,11 @@ void test_whole_model_2_video_tiny_yolo_v2(int argc, char *argv[])
         const char *filename2 = "../TINY_YOLO_V2.Blob";
 	int blob_nums = 2; dp_blob_parm_t parms[2] = {{0,416,416,18000*2},{0,416,416,18000*2}};
         dp_netMean mean[2]={{0,0,0,255},{0,0,0,255}};
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, parms);
-    dp_set_blob_mean_std(blob_nums,mean);
+        dp_set_blob_mean_std(blob_nums,mean);
 	ret = dp_update_model(filename);
+        
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
 	}
@@ -2188,8 +2280,6 @@ void test_whole_model_2_video_tiny_yolo_v2(int argc, char *argv[])
 	else {
 		printf("Test dp_update_model_2(%s) failed ! ret=%d\n", filename2, ret);
 	}
-	
-	
 	DP_MODEL_NET net_1=DP_TINY_YOLO_V2_NET;
 	dp_register_box_device_cb(box_callback_model_two_demo, &net_1);	
 	DP_MODEL_NET net_2=DP_TINY_YOLO_V2_NET;
@@ -2237,7 +2327,7 @@ void test_whole_model_1_video_jieshang(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
         dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
@@ -2279,10 +2369,10 @@ void test_whole_model_1_video_jieshang(int argc, char *argv[])
 void test_whole_model_1_video_face(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../head_m2_s4_no_bn.graph";
+	const char *filename = "../mvoutput.graph";
 
-	int blob_nums = 1; dp_blob_parm_t parms = {0,368,368,160*160*5*2};
-    dp_netMean mean={127,127,127,21.167};
+	int blob_nums = 1; dp_blob_parm_t parms = {1,320,320,6400*2};
+        dp_netMean mean={127,127,127,1};
 	if (argc > 0)
 	{
 		filename = argv[0];
@@ -2294,7 +2384,7 @@ void test_whole_model_1_video_face(int argc, char *argv[])
 			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
 		}
 	}
-
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
 	test_update_model_parems(blob_nums, &parms);
         dp_set_blob_mean_std(blob_nums,&mean);
 	ret = dp_update_model(filename);
@@ -2349,25 +2439,25 @@ testcase_t g_testcases[] =
 	{ "get_frame", "get_frame", test_get_frame },
 #endif
 	{"stop_camera", "stop_camera", test_stop_camera },
-    {"test_whole_model_1_video_SqueezeNet","test_whole_model_1_video_SqueezeNet",test_whole_model_1_video_SqueezeNet},
-    {"test_whole_model_1_video_SSD_MobileNet","test_whole_model_1_video_SSD_MobileNet",test_whole_model_1_video_SSD_MobileNet},
-    {"test_whole_model_1_video_Resnet_18","test_whole_model_1_video_Resnet_18",test_whole_model_1_video_Resnet_18},
-    {"test_whole_model_1_video_gendernet","test_whole_model_1_video_gendernet",test_whole_model_1_video_gendernet},
-    {"test_whole_model_1_video_AgeNet","test_whole_model_1_video_AgeNet",test_whole_model_1_video_AgeNet},
-    {"test_whole_model_1_video_TinyYoloNet","test_whole_model_1_video_TinyYoloNet",test_whole_model_1_video_TinyYoloNet},
-    {"test_whole_model_1_video_googleNet","test_whole_model_1_video_googleNet",test_whole_model_1_video_googleNet},
-    {"test_whole_model_1_video_mnist","test_whole_model_1_video_mnist",test_whole_model_1_video_mnist},
-    {"test_whole_model_1_video_inception_v4","test_whole_model_1_video_inception_v4",test_whole_model_1_video_inception_v4},
-    {"test_whole_model_1_video_inception_v3","test_whole_model_1_video_inception_v3",test_whole_model_1_video_inception_v3},
-    {"test_whole_model_1_video_inception_v2","test_whole_model_1_video_inception_v2",test_whole_model_1_video_inception_v2},
-    {"test_whole_model_1_video_inception_v1","test_whole_model_1_video_inception_v1",test_whole_model_1_video_inception_v1},
-    {"test_whole_model_1_video_mobilenets","test_whole_model_1_video_mobilenets",test_whole_model_1_video_mobilenets},
-    {"test_whole_model_2_video_model","test_whole_model_2_video_model",test_whole_model_2_video_model},
-    {"test_whole_model_1_video_tiny_yolo_v2","test_whole_model_1_video_tiny_yolo_v2",test_whole_model_1_video_tiny_yolo_v2},
-    {"test_whole_model_1_video_jieshang","test_whole_model_1_video_jieshang",test_whole_model_1_video_jieshang},
-    {"test_whole_model_1_video_face","test_whole_model_1_video_face",test_whole_model_1_video_face},
-    {"test_whole_model_2_video_model_jingdong","test_whole_model_2_video_model_jingdong",test_whole_model_2_video_model_jingdong},
-    {"test_whole_model_2_video_tiny_yolo_v2","test_whole_model_2_video_tiny_yolo_v2",test_whole_model_2_video_tiny_yolo_v2}
+        {"test_whole_model_1_video_SqueezeNet","test_whole_model_1_video_SqueezeNet",test_whole_model_1_video_SqueezeNet},
+        {"test_whole_model_1_video_SSD_MobileNet","test_whole_model_1_video_SSD_MobileNet",test_whole_model_1_video_SSD_MobileNet},
+        {"test_whole_model_1_video_Resnet_18","test_whole_model_1_video_Resnet_18",test_whole_model_1_video_Resnet_18},
+        {"test_whole_model_1_video_gendernet","test_whole_model_1_video_gendernet",test_whole_model_1_video_gendernet},
+        {"test_whole_model_1_video_AgeNet","test_whole_model_1_video_AgeNet",test_whole_model_1_video_AgeNet},
+        {"test_whole_model_1_video_TinyYoloNet","test_whole_model_1_video_TinyYoloNet",test_whole_model_1_video_TinyYoloNet},
+        {"test_whole_model_1_video_googleNet","test_whole_model_1_video_googleNet",test_whole_model_1_video_googleNet},
+        {"test_whole_model_1_video_mnist","test_whole_model_1_video_mnist",test_whole_model_1_video_mnist},
+        {"test_whole_model_1_video_inception_v4","test_whole_model_1_video_inception_v4",test_whole_model_1_video_inception_v4},
+        {"test_whole_model_1_video_inception_v3","test_whole_model_1_video_inception_v3",test_whole_model_1_video_inception_v3},
+        {"test_whole_model_1_video_inception_v2","test_whole_model_1_video_inception_v2",test_whole_model_1_video_inception_v2},
+        {"test_whole_model_1_video_inception_v1","test_whole_model_1_video_inception_v1",test_whole_model_1_video_inception_v1},
+        {"test_whole_model_1_video_mobilenets","test_whole_model_1_video_mobilenets",test_whole_model_1_video_mobilenets},
+        {"test_whole_model_2_video_model","test_whole_model_2_video_model",test_whole_model_2_video_model},
+        {"test_whole_model_1_video_tiny_yolo_v2","test_whole_model_1_video_tiny_yolo_v2",test_whole_model_1_video_tiny_yolo_v2},
+        {"test_whole_model_1_video_jieshang","test_whole_model_1_video_jieshang",test_whole_model_1_video_jieshang},
+        {"test_whole_model_1_video_face","test_whole_model_1_video_face",test_whole_model_1_video_face},
+        {"test_whole_model_2_video_model_jingdong","test_whole_model_2_video_model_jingdong",test_whole_model_2_video_model_jingdong},
+        {"test_whole_model_2_video_tiny_yolo_v2","test_whole_model_2_video_tiny_yolo_v2",test_whole_model_2_video_tiny_yolo_v2}
 };
 int g_case_count = sizeof(g_testcases) / sizeof(testcase_t);
 
@@ -2385,6 +2475,11 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "dp_init failed!");
         return ret;
 	}
+        signal(SIGINT,sighandler);
+	signal(SIGABRT,sighandler);
+	signal(SIGFPE,sighandler);
+	signal(SIGILL,sighandler);
+	signal(SIGSEGV,sighandler);
 	if (argc == 1) {
 		for (i = 0; i < g_case_count; i++) {
 			g_testcases[i].test(0, NULL);
@@ -2406,7 +2501,6 @@ int main(int argc, char *argv[])
 	else {
 		usage();
 	}
-    ret = dp_stop_camera();
     ret = dp_uninit();
 	if (ret != 0) {
 		printf("dp_uninit failed!");

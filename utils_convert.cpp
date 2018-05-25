@@ -1,3 +1,11 @@
+/**********************************
+*anthor :yuqj
+*
+*date:2018.3.23
+*
+*@breif:make the forth channeal file
+*
+**********************************/
 #include <iostream>
 #include <stdio.h>
 #include <stdlib.h>

@@ -167,6 +167,8 @@ EXTERN DLL int dp_get_camera_config(dp_camera_config_t * config);
 * \returns 0 if sucess, <0 if error occured.
 */
 
+EXTERN DLL int dp_set_blob_image_size(dp_image_box_t *box);
+
 EXTERN DLL int dp_set_blob_parms(int num_model,dp_blob_parm_t *param);
 
 EXTERN DLL int dp_set_blob_mean_std(int num_model,dp_netMean *param);
@@ -189,6 +191,8 @@ EXTERN DLL int dp_update_model(const char* filename);
 EXTERN DLL int dp_update_model_2(const char* filename);
 
 EXTERN DLL int dp_send_first_box_image(int box_num,dp_image_box_t *box);
+
+EXTERN DLL int dp_send_stop_cmd();
 /** \ingroup dp_update_firmware
 * update firmware.
 *

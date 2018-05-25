@@ -1,4 +1,21 @@
 请仔细阅读本文本的内容:谢谢！
+-------------------------------
+2018.05.25:更新：板子新增：
+1)可以对模型解析的carmera图象帧进行自定义ROI,可以保证模型输入资料宽高比和送入检测的宽高比一致;
+2）每次调试玩之后，不再需要重新插拔usb了
+3）新增：    32位win库，为dp_api_d.dll和dp_api_d.lib;
+             64位win库：dp_api.dll和dp_api.lib
+自定义ROI接口：dp_set_blob_image_size（dp_image_box_t *box）;其中，dp_image_box_t{
+        int x1;//box宽起始位
+        int x2;//box宽终止位
+        int y1;//box高起始位
+        int y2;//box高终止位
+}
+此接口和传入模型参数以及均值和std的代码逻辑如下：
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);//自定义ROI
+	test_update_model_parems(blob_nums, parms);//传入模型参数
+        dp_set_blob_mean_std(blob_nums,mean);//传入mean和std
+-------------------------------
 [1]本套模组（ma2450）集有摄像头ov5658,可用于解析caffemodel的大部分算法模型，使用之前，需要使用ncsdk的转换工具mvNCCompiler，将caffemodel转化为mv模组可用的blob格式数据.
 [2]测试model：链接: https://pan.baidu.com/s/1xf7sqFbwDdqisszKilpb0w 密码: 8ajp
 [3]linux下SDK中test.cpp下的编译步骤：

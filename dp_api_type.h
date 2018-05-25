@@ -29,6 +29,8 @@ typedef enum {
 	DP_CMD_RECEIVE_BOX_IMAGE, //62
 	DP_CMD_HARDWARE_TEST=65, 
         DP_CMD_GET_BLOB_MEAN_STD=66,
+	DP_CMD_STOP_PARSE_MODEL=67,
+	DP_CMD_IMAGE_BLOB_SIZE=68,
 }dp_command_t;
 
 typedef enum {
