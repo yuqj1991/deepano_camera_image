@@ -46,6 +46,7 @@ dp_image_box_t BLOB_IMAGE_SIZE={0,1280,0,960};
 int dp_image_box_mask=0;
 #define UNUSED(x) (void)(x)
 
+//模型实例枚举
 typedef enum NET_CAFFE_TENSFLOW
 {
    DP_AGE_NET=0,
@@ -78,7 +79,7 @@ typedef struct _max_age
    float max_predected;
    int   index;
 }max_age;
-
+//排序
 max_age argsort_age(float * a,int length)
 {
   max_age max={0,0};
@@ -93,7 +94,7 @@ max_age argsort_age(float * a,int length)
   return max;
 }
 
-
+//信号捕捉事件
 void sighandler(int signum)  
 {
 	switch(signum)
@@ -156,7 +157,7 @@ void sighandler(int signum)
 	}  
 }  
 
-
+//ping
 void test_ping(int argc, char *argv[])
 {
 	int ret;
@@ -171,6 +172,7 @@ void test_ping(int argc, char *argv[])
 	}
 }
 
+//版本号
 void test_version(int argc, char *argv[])
 {
 	int ret;
@@ -200,7 +202,7 @@ void test_hardware_test(int argc, char *argv[])
 		printf("Test test_hardware_test failed! ret=%d\n", ret);
 	}
 }
-#ifdef SUPPORT_OPENCV
+#ifdef SUPPORT_OPENCV//开启摄像头
 void test_start_cammera(int argc, char *argv[])
 {
 	int ret;
@@ -213,6 +215,7 @@ void test_start_cammera(int argc, char *argv[])
 		printf("Test dp_start_camera failed! ret=%d\n", ret);
 	}
 }
+//上传板子的模型参数
 void test_update_model_parems(int blob_nums,dp_blob_parm_t*parmes)
 {
   int ret;
@@ -224,7 +227,7 @@ void test_update_model_parems(int blob_nums,dp_blob_parm_t*parmes)
 }
 
 
-
+//帧率回调函数
 void fps_callback(int32_t *buffer_fps,void *param)
 {
   //int *buffer=(int *)buffer_fps;
@@ -236,7 +239,7 @@ void fps_callback(int32_t *buffer_fps,void *param)
   strcpy(s,ctime(&timep)); 
   printf("%s\n", s);  
 }
-
+//解析模型时间回调函数
 void blob_parse_callback(double *buffer_fps,void *param)
 {
   for(int stage=0;stage<200;stage++)
@@ -253,7 +256,7 @@ void blob_parse_callback(double *buffer_fps,void *param)
    printf("the total spending %f ms\n",Sum_blob_parse_time);
    Sum_blob_parse_time=0; 
 }
-
+//视频帧回调函数
 void video_callback(dp_img_t *img, void *param)
 {
 	Mat myuv(img->height + img->height / 2, img->width, CV_8UC1, img->img);
@@ -305,7 +308,7 @@ void video_callback(dp_img_t *img, void *param)
       }
 	//video_mutex.unlock();
 }
-
+//打开视频帧
 void test_start_video(int argc, char *argv[])
 {
 	int ret;
@@ -333,7 +336,7 @@ void test_start_video(int argc, char *argv[])
 	destroyWindow(win_name);
 	dp_stop_camera();
 }
-#endif
+#endif//打开摄像头
 void test_start_camera(int argc, char *argv[])
 {
 	int ret;
@@ -347,7 +350,7 @@ void test_start_camera(int argc, char *argv[])
 		printf("Test dp_start_camera failed! ret=%d\n", ret);
 	}
 }
-
+//关闭摄像头
 void test_stop_camera(int argc, char *argv[])
 {
 	int ret;
@@ -361,7 +364,7 @@ void test_stop_camera(int argc, char *argv[])
 		printf("Test dp_stop_camera failed! ret=%d\n", ret);
 	}
 }
-
+//设置摄像头参数，现在还有些小bug
 void test_set_camera_config(int argc, char *argv[])
 {
 	int ret;
@@ -383,7 +386,7 @@ void test_set_camera_config(int argc, char *argv[])
 			config.width, config.height, config.fps, config.id, ret);
 	}
 }
-
+//获取摄像头参数
 void test_get_camera_config(int argc, char *argv[])
 {
 	int ret;
@@ -399,7 +402,7 @@ void test_get_camera_config(int argc, char *argv[])
 		printf("Test dp_get_camera_config failed! ret=%d\n", ret);
 	}
 }
-
+//获取图象帧
 void test_get_frame(int argc, char *argv[])
 {
 	int ret;
@@ -441,7 +444,7 @@ void reshape(float *data, float *new_data,int length_data)
       }
    }
 }
-
+//双模型，解析获取box回传给板子
 void box_callback_model_two_demo(void *result,void *param)
 {
   DP_MODEL_NET model=*((DP_MODEL_NET*)param);
@@ -704,7 +707,7 @@ void box_callback_model_two_demo(void *result,void *param)
 		break;
    }
 }
-
+//单模型结果解析
 void box_callback_model_demo(void *result,void *param)
 {
   DP_MODEL_NET model=*((DP_MODEL_NET*)param);
@@ -1191,7 +1194,7 @@ void box_callback_model_demo(void *result,void *param)
 
   return;
 }
-
+//ssd+caffenet
 void test_whole_model_2_video_model_jingdong(int argc, char *argv[])
 {
 	int ret;
@@ -1246,7 +1249,7 @@ void test_whole_model_2_video_model_jingdong(int argc, char *argv[])
 	destroyWindow(win_name);
 }
 
-
+//googlenet
 void test_whole_model_1_video_googleNet(int argc, char *argv[])
 {
 	int ret;
@@ -1325,7 +1328,7 @@ void test_whole_model_1_video_googleNet(int argc, char *argv[])
 	destroyWindow(win_name);
 }
 
-
+//yolov1-tinyyolo
 void test_whole_model_1_video_TinyYoloNet(int argc, char *argv[])
 {
 	int ret;
@@ -1435,7 +1438,7 @@ void test_whole_model_1_video_AgeNet(int argc, char *argv[])
 	}
 	destroyWindow(win_name);
 }
-
+//gendernet
 void test_whole_model_1_video_gendernet(int argc, char *argv[])
 {
 	int ret;
@@ -1491,7 +1494,7 @@ void test_whole_model_1_video_gendernet(int argc, char *argv[])
 	}
 	destroyWindow(win_name);
 }
-
+//resnet
 void test_whole_model_1_video_Resnet_18(int argc, char *argv[])
 {
 	int ret;
@@ -1569,7 +1572,7 @@ void test_whole_model_1_video_Resnet_18(int argc, char *argv[])
 	}
 	destroyWindow(win_name);
 }
-
+//squezzse
 void test_whole_model_1_video_SqueezeNet(int argc, char *argv[])
 {
 	int ret;
@@ -1649,7 +1652,7 @@ void test_whole_model_1_video_SqueezeNet(int argc, char *argv[])
 	}
 	destroyWindow(win_name);
 }
-
+//ssd—mobiletnet
 void test_whole_model_1_video_SSD_MobileNet(int argc, char *argv[])
 {
 	int ret;
@@ -1704,7 +1707,7 @@ void test_whole_model_1_video_SSD_MobileNet(int argc, char *argv[])
 	}
 	destroyWindow(win_name);
 }
-
+//inception-v1
 void test_whole_model_1_video_inception_v1(int argc, char *argv[])
 {
 	int ret;
@@ -1775,7 +1778,7 @@ void test_whole_model_1_video_inception_v1(int argc, char *argv[])
 	destroyWindow(win_name);
 }
 
-
+//incetpion-v2
 void test_whole_model_1_video_inception_v2(int argc, char *argv[])
 {
 	int ret;
@@ -1847,7 +1850,7 @@ void test_whole_model_1_video_inception_v2(int argc, char *argv[])
 	destroyWindow(win_name);
 }
 
-
+//incetption-v3
 void test_whole_model_1_video_inception_v3(int argc, char *argv[])
 {
 	int ret;
@@ -1918,7 +1921,7 @@ void test_whole_model_1_video_inception_v3(int argc, char *argv[])
 	}
 	destroyWindow(win_name);
 }
-
+//incetption-v4
 void test_whole_model_1_video_inception_v4(int argc, char *argv[])
 {
 	int ret;
@@ -1989,7 +1992,7 @@ void test_whole_model_1_video_inception_v4(int argc, char *argv[])
 	}
 	destroyWindow(win_name);
 }
-
+//mnist
 void test_whole_model_1_video_mnist(int argc, char *argv[])
 {
 	int ret;
@@ -2045,7 +2048,7 @@ void test_whole_model_1_video_mnist(int argc, char *argv[])
 	destroyWindow(win_name);
 }
 
-
+//mobiletnet
 void test_whole_model_1_video_mobilenets(int argc, char *argv[])
 {
 	int ret;
@@ -2123,7 +2126,7 @@ void test_whole_model_1_video_mobilenets(int argc, char *argv[])
 	}
 	destroyWindow(win_name);
 }
-
+//ssd+google
 void test_whole_model_2_video_model(int argc, char *argv[])
 {
 	int ret;
@@ -2200,7 +2203,7 @@ void test_whole_model_2_video_model(int argc, char *argv[])
 	}
 	destroyWindow(win_name);
 }
-
+//tiny_yolo_v2
 void test_whole_model_1_video_tiny_yolo_v2(int argc, char *argv[])
 {
 	int ret;
@@ -2254,7 +2257,7 @@ void test_whole_model_1_video_tiny_yolo_v2(int argc, char *argv[])
 	}
 	destroyWindow(win_name);
 }
-
+//双模型tiny_yolo_v2+tiny_yolo_v2
 void test_whole_model_2_video_tiny_yolo_v2(int argc, char *argv[])
 {
 	int ret;
