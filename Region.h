@@ -29,5 +29,10 @@ struct Region
                        float thresh, float nms,
                        int blockwd,
                        std::vector<DetectedObject> &objects);
+    void GetDetections_non_square(float* data, int c, int h, int w,
+                       int classes, int imgw, int imgh,
+                       float thresh, float nms,
+                       int blockwd,int blockhd,
+                       std::vector<DetectedObject> &objects);
 };
 

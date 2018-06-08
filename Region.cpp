@@ -174,3 +174,136 @@ void Region::GetDetections(float* data, int c, int h, int w,
 	return ;
 }
 
+void Region::GetDetections_non_square(float* data, int c, int h, int w,
+                       int classes, int imgw, int imgh,
+                       float thresh, float nms,
+                       int blockwd,int blockhd,
+                       std::vector<DetectedObject> &objects)
+{
+        objects.clear();
+
+	int size = 4 + classes + 1;
+	if(!initialized)
+	{
+		Initialize(c, h, w, size);
+	}
+
+	if(!initialized)
+	{
+		printf("Fail to initialize internal buffer!\n");
+		return ;
+	}
+
+	int i,j,k;
+
+	transpose(data, &output[0], size*N, w*h);
+
+	// Initialize box, scale and probability
+	for(i = 0; i < h*w*N; ++i)
+	{
+		int index = i * size;
+		//Box
+		int n = i % N;
+		int row = (i/N) / w;
+		int col = (i/N) % w;
+
+		boxes[i].x = (col + logistic_activate(output[index + 0])) / blockwd; //w;
+		boxes[i].y = (row + logistic_activate(output[index + 1])) / blockhd; //h;
+		boxes[i].w = exp(output[index + 2]) * biases[2*n]   / blockwd; //w;
+		boxes[i].h = exp(output[index + 3]) * biases[2*n+1] / blockhd; //h;
+
+		//Scale
+		output[index + 4] = logistic_activate(output[index + 4]);
+
+		//Class Probability
+		softmax(&output[index + 5], classes, 1, &output[index + 5]);
+		for(j = 0; j < classes; ++j)
+		{
+			output[index+5+j] *= output[index+4];
+			if(output[index+5+j] < thresh) output[index+5+j] = 0;
+		}
+	}
+
+	//nms
+	for(k = 0; k < classes; ++k)
+	{
+		for(i = 0; i < totalObjects; ++i)
+		{
+			s[i].iclass = k;
+		}
+		qsort(&s[0], totalObjects, sizeof(indexsort), indexsort_comparator);
+		for(i = 0; i < totalObjects; ++i){
+			if(output[s[i].index * size + k + 5] == 0) continue;
+			ibox a = boxes[s[i].index];
+			for(j = i+1; j < totalObjects; ++j){
+				ibox b = boxes[s[j].index];
+				if (box_iou(a, b) > nms){
+					output[s[j].index * size + 5 + k] = 0;
+				}
+			}
+		}
+	}
+	// generate objects
+	for(i = 0, j = 5; i < totalObjects; ++i, j += size)
+	{
+		int iclass = max_index(&output[j], classes);
+
+		float prob = output[j+iclass];
+
+		if(prob > thresh)
+		{
+			ibox b = boxes[i];
+
+			printf("%f %f %f %f\n", b.x, b.y, b.w, b.h);
+
+			int left  = (b.x-b.w/2.)*imgw;
+			int right = (b.x+b.w/2.)*imgw;
+			int top   = (b.y-b.h/2.)*imgh;
+			int bot   = (b.y+b.h/2.)*imgh;
+
+			if(left < 0) left = 0;
+			if(right > imgw-1) right = imgw-1;
+			if(top < 0) top = 0;
+			if(bot > imgh-1) bot = imgh-1;
+#if 0
+		        int neww;
+                        int newh;
+			
+			if(imgw>imgh)
+			{
+			   neww=int(imgh*416/imgw);
+			   newh=416;
+			}
+			else
+			{
+			   newh=int(imgw*416/imgh);
+			   neww=416;
+			}
+			int offx=int((416-neww)/2);
+			int offy=int((416-newh)/2);
+			
+			offx=int(offx*imgw/neww);
+			offy=int(offy*imgh/newh);
+			float xscale=(float)(neww/416);
+			float yscale=(float)(newh/416);
+			left=int(left/xscale)-offx;
+			right=int(right/xscale)-offx;
+			top=int(top/yscale)-offy;
+			bot=int(bot/yscale)-offy;
+#endif
+
+			DetectedObject obj;
+			obj.left = left;
+			obj.top = top;
+			obj.right = right;
+			obj.bottom = bot;
+			obj.confidence = prob;
+			obj.objType = iclass;
+			obj.name = objectnames[iclass];
+			
+			objects.push_back(obj);
+		}
+	}
+
+	return ;
+}

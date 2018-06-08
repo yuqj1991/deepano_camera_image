@@ -12,6 +12,10 @@
 #include "interpret_output.h"
 #include "Common.h"
 #include "Region.h"
+
+#include <fstream>   
+#include <iostream> 
+
 #if defined _MSC_VER && defined _WIN64 || defined __linux__ || defined _WIN32
 #define SUPPORT_OPENCV
 #endif
@@ -39,6 +43,7 @@ static int num_box=1;
 int32_t fps;
 
 double blob_parse_stage[400];
+string blob_parse;
 int blob_stage_index;
 double Sum_blob_parse_time=0;
 dp_image_box_t box_second[2];
@@ -61,7 +66,6 @@ typedef enum NET_CAFFE_TENSFLOW
    DP_INCEPTION_V1,
    DP_INCEPTION_V2,
    DP_INCEPTION_V3,
-   DP_INCEPTION_V4,
    DP_MOBILINERS_NET,
    DP_ALI_FACENET,
    DP_TINY_YOLO_V2_NET,
@@ -79,6 +83,15 @@ typedef struct _max_age
    float max_predected;
    int   index;
 }max_age;
+
+int write_string_to_file_append(const std::string & file_string, const std::string str )  
+{  
+    std::ofstream   OsWrite(file_string,std::ofstream::app);  
+    OsWrite<<str;  
+    OsWrite<<std::endl;  
+    OsWrite.close();  
+   return 0;  
+} 
 //排序
 max_age argsort_age(float * a,int length)
 {
@@ -226,7 +239,6 @@ void test_update_model_parems(int blob_nums,dp_blob_parm_t*parmes)
   	printf("parems transfer failed\n");
 }
 
-
 //帧率回调函数
 void fps_callback(int32_t *buffer_fps,void *param)
 {
@@ -247,20 +259,26 @@ void blob_parse_callback(double *buffer_fps,void *param)
      blob_parse_stage[stage]=buffer_fps[stage*2+0];
      blob_stage_index=buffer_fps[stage*2+1];
      Sum_blob_parse_time+=blob_parse_stage[stage];
-     printf("\nthe %d stage parse spending %f ms,and optType:%s\n",stage,blob_parse_stage[stage],OP_NAMES[blob_stage_index]);
+     //printf("\nthe %d stage parse spending %f ms,and optType:%s\n",stage,blob_parse_stage[stage],OP_NAMES[blob_stage_index]);
+     std::ostringstream   ostr;
+     ostr<<"the"<<stage<<"stage parse spending"<<blob_parse_stage[stage]<<"ms,and optType:"<<OP_NAMES[blob_stage_index]<<"\n";
+     blob_parse.append(ostr.str());
      if((stage+1)<200)
-     {if(buffer_fps[(stage+1)*2+0]==0)
-       break;
+     {
+        if(buffer_fps[(stage+1)*2+0]==0)
+        break;
      }
-  }
-   printf("the total spending %f ms\n",Sum_blob_parse_time);
-   Sum_blob_parse_time=0; 
+  }     std::ostringstream   ostr;
+        ostr <<"the total spending "<<Sum_blob_parse_time<<" ms\n";
+        blob_parse.append(ostr.str());
+        write_string_to_file_append(std::string("blob_parse_stage_file.txt"),blob_parse);
+        Sum_blob_parse_time=0; 
 }
 //视频帧回调函数
 void video_callback(dp_img_t *img, void *param)
 {
 	Mat myuv(img->height + img->height / 2, img->width, CV_8UC1, img->img);
-	//video_mutex.lock();
+	video_mutex.lock();
 	cvtColor(myuv, bgr, CV_YUV2BGR_I420, 0);
 	DP_MODEL_NET model=*((DP_MODEL_NET*)param);
 	switch (model)
@@ -306,7 +324,7 @@ void video_callback(dp_img_t *img, void *param)
 	     break;
           }	  
       }
-	//video_mutex.unlock();
+	video_mutex.unlock();
 }
 //打开视频帧
 void test_start_video(int argc, char *argv[])
@@ -434,16 +452,17 @@ void test_get_frame(int argc, char *argv[])
 	}
 }
 
-void reshape(float *data, float *new_data,int length_data)
+void reshape(float *data, float *new_data,int length_data,int c,int w,int h)
 {
-   for(int i=0;i<125;i++)
+   for(int i=0;i<c;i++)
    {
-      for(int m=0;m<144;m++)
+      for(int m=0;m<w*h;m++)
       {
-         new_data[i*144+m]=data[m*125+i];
+         new_data[i*w*h+m]=data[m*c+i];
       }
    }
 }
+
 //双模型，解析获取box回传给板子
 void box_callback_model_two_demo(void *result,void *param)
 {
@@ -624,7 +643,7 @@ void box_callback_model_two_demo(void *result,void *param)
              int img_height=960;
              for (u32 i = 0; i < resultlen; i++)
                resultfp32[i]= f16Tof32(probabilities[i]);
-             reshape(resultfp32, new_data,resultlen);
+             reshape(resultfp32, new_data,resultlen,125,12,12);
              int dim[2] ={416,416};
              int blockwd = 12;
              int wh =blockwd*blockwd;
@@ -1025,37 +1044,6 @@ void box_callback_model_demo(void *result,void *param)
          free(resultfp32);
 		 break;
 	  }
-		case DP_INCEPTION_V4:
-	  {
-		 u16* probabilities = (u16*)result;
-         unsigned int resultlen=1001;
-         float*resultfp32;
-         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-         int img_width=1280;
-         int img_height=960;
-         for (u32 i = 0; i < resultlen; i++)
-            resultfp32[i]= f16Tof32(probabilities[i]);
-		 float temp_predeiction=0.0;
-		 int index_temp=0;
-         for(int i=0;i<5;i++)
-		 {
-		   temp_predeiction=resultfp32[i];
-		   index_temp=i;
-		   for(int j=i+1;j<resultlen;j++)
-		   {
-		     if(temp_predeiction<=resultfp32[j])
-		     {
-		        temp_predeiction=resultfp32[j];
-				index_temp=j;
-		     }
-		   }
-		   resultfp32[index_temp]=resultfp32[i];
-		   resultfp32[i]=temp_predeiction;
-   		   printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
-		 }
-         free(resultfp32);
-		 break;
-	  }
 		case DP_MNIST_NET:
 	  {
 		 u16* probabilities = (u16*)result;
@@ -1137,44 +1125,46 @@ void box_callback_model_demo(void *result,void *param)
           }
           case DP_TINY_YOLO_V2_NET:
 	  {
-	     u16* probabilities = (u16*)result;
-             unsigned int resultlen=18000;
-             std::vector<DetectedObject> results;
-             int result_num=0;
-             float* resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-             float* new_data=(float*)malloc(resultlen * sizeof(*new_data));
-             int img_width=1280;
-             int img_height=960;
-             for (u32 i = 0; i < resultlen; i++)
-               resultfp32[i]= f16Tof32(probabilities[i]);
-             reshape(resultfp32, new_data,resultlen);
-             int dim[2] ={416,416};
-             int blockwd = 12;
-             int wh =blockwd*blockwd;
-             int targetBlockwd = 13;
-             int classes = 20;
-             float threshold = 0.25;
-             float nms = 0.4;
-             Region region_obj;
-	     region_obj.GetDetections(new_data,125,blockwd,blockwd,classes,img_width,img_height,threshold,nms,targetBlockwd,results);
-             num_box_demo= results.size();
-             printf("second_results.size():%d\n",results.size());
-             for (int i = 0; i <  results.size(); ++i)
-             { 
-               printf("second_class:%s, x:%d, y:%d, width:%d, height:%d, probability:%.2f.\n",results[i].name.c_str(),results[i].left,results[i].top,(results[i].right-results[i].left),(results[i].bottom-results[i].top),results[i].confidence);
-               box_demo[i].x1=results[i].left;
-               box_demo[i].x2=results[i].right;
-	       if(box_demo[i].x2>img_width)
-	 	     box_demo[i].x2=img_width;
-               box_demo[i].y1=results[i].top;
-               box_demo[i].y2=results[i].bottom;
-	       if(box_demo[i].y2>img_height)
-	 	      box_demo[i].y2=img_height;
-	       results[i].name.copy(categoles[i],20, 0);
-            }
-            free(resultfp32);
-            free(new_data);	 
-	    break;
+	        u16* probabilities = (u16*)result;
+                unsigned int resultlen=4320;
+                std::vector<DetectedObject> results;
+                int result_num=0;
+                float* resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+                float* new_data=(float*)malloc(resultlen * sizeof(*new_data));
+                int img_width=1280;
+                int img_height=960;
+                for (u32 i = 0; i < resultlen; i++)
+                        resultfp32[i]= f16Tof32(probabilities[i]);
+                reshape(resultfp32, new_data,resultlen,40,9,12);
+                int dim[2] ={320,416};
+                int blockwd =12;
+                int blockhd = 9;
+                int wh =blockwd*blockwd;
+                int targetBlockwd = 13;
+                int targetBlockhd = 10;
+                int classes = 3;
+                float threshold = 0.20;
+                float nms = 0.4;
+                Region region_obj;
+	        region_obj.GetDetections_non_square(new_data,40,blockhd,blockwd,classes,img_width,img_height,threshold,nms,targetBlockwd,targetBlockhd,results);
+                num_box_demo= results.size();
+                printf("second_results.size():%d\n",results.size());
+                for (int i = 0; i <  results.size(); ++i)
+                { 
+                        printf("second_class:%s, x:%d, y:%d, width:%d, height:%d, probability:%.2f.\n",results[i].name.c_str(),results[i].left,results[i].top,(results[i].right-results[i].left),(results[i].bottom-results[i].top),results[i].confidence);
+                        box_demo[i].x1=results[i].left;
+                        box_demo[i].x2=results[i].right;
+	                if(box_demo[i].x2>img_width)
+	 	                box_demo[i].x2=img_width;
+                        box_demo[i].y1=results[i].top;
+                        box_demo[i].y2=results[i].bottom;
+	                if(box_demo[i].y2>img_height)
+	 	                box_demo[i].y2=img_height;
+	                results[i].name.copy(categoles[i],20, 0);
+                }
+                free(resultfp32);
+                free(new_data);	 
+	        break;
 }
  case DP_CAFFE_NET:
 	  {
@@ -1921,77 +1911,6 @@ void test_whole_model_1_video_inception_v3(int argc, char *argv[])
 	}
 	destroyWindow(win_name);
 }
-//incetption-v4
-void test_whole_model_1_video_inception_v4(int argc, char *argv[])
-{
-	int ret;
-	const char *filename = "../inception_v4";
-
-	int blob_nums = 1; dp_blob_parm_t parms = {1,299,299,1001*2};
-        dp_netMean mean={128,128,128,128};
-	if (argc > 0)
-	{
-		filename = argv[0];
-		blob_nums = atoi(argv[1]);
-		for (int i = 0; i<blob_nums; i++)
-		{
-			parms.InputSize_height = atoi(argv[i * 3 + 2 + 0]);
-			parms.InputSize_width = atoi(argv[i * 3 + 2 + 1]);
-			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
-		}
-	}
-        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
-	test_update_model_parems(blob_nums, &parms);
-        dp_set_blob_mean_std(blob_nums,&mean);
-	ret = dp_update_model(filename);
-	if (ret == 0) {
-		printf("Test dp_update_model(%s) sucessfully!\n", filename);
-	}
-	else {
-		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
-	}
-	
-	FILE *fp=fopen("categories.txt","r");
-	if(fp==NULL)
-	{
-	   printf("can not open the file\n");
-	}
-	label_cagerioes=(char **)malloc(1002*sizeof(char*));
-	char buffer[500];
-	int index_label=0;
-	while(fgets(buffer,500,fp)!=NULL)
-	{
-		label_cagerioes[index_label]=(char*)malloc(500*sizeof(char));
-	     memcpy(label_cagerioes[index_label],buffer,500);
-		 label_cagerioes[index_label][strlen(label_cagerioes[index_label])-1]='\0';
-		 index_label++;
-	}
-	fclose(fp);
-	DP_MODEL_NET net=DP_INCEPTION_V4;
-	dp_register_video_frame_cb(video_callback, &net);
-	dp_register_box_device_cb(box_callback_model_demo,&net);
-        dp_register_fps_device_cb(fps_callback,&net);
-        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
-	ret = dp_start_camera_video();
-	if (ret == 0) {
-		printf("Test test_start_video successfully!\n");
-	}
-	else {
-		printf("Test test_start_video failed! ret=%d\n", ret);
-	}
-
-	const char *win_name = "video";
-	namedWindow(win_name);
-	int key = -1;
-	for (;;) {
-		video_mutex.lock();
-		if (!bgr.empty())
-			imshow(win_name, bgr);
-		video_mutex.unlock();
-		key = waitKey(30);
-	}
-	destroyWindow(win_name);
-}
 //mnist
 void test_whole_model_1_video_mnist(int argc, char *argv[])
 {
@@ -2177,7 +2096,7 @@ void test_whole_model_2_video_model(int argc, char *argv[])
         }
 	fclose(fp);	
 	DP_MODEL_NET net_1=DP_SSD_MOBILI_NET;
-	dp_register_box_device_cb(box_callback_model_demo, &net_1);	
+	dp_register_box_device_cb(box_callback_model_two_demo, &net_1);	
 	DP_MODEL_NET net_2=DP_GOOGLE_NET;
 	dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
 	dp_register_video_frame_cb(video_callback, &net_1);
@@ -2207,9 +2126,9 @@ void test_whole_model_2_video_model(int argc, char *argv[])
 void test_whole_model_1_video_tiny_yolo_v2(int argc, char *argv[])
 {
 	int ret;
-	const char *filename = "../TINY_YOLO_V2.Blob";//"/home/yu/tini_yolo.blob";
-
-	int blob_nums = 1; dp_blob_parm_t parms = {0,416,416,18000*2};
+	//const char *filename = "../TINY_YOLO_V2.Blob";//"/home/yu/tini_yolo.blob";
+        const char *filename = "../graph_plate_416x320";
+	int blob_nums = 1; dp_blob_parm_t parms = {0,416,320,4320*2};
         dp_netMean mean={0,0,0,255};
 	if (argc > 0)
 	{
@@ -2450,7 +2369,6 @@ testcase_t g_testcases[] =
         {"test_whole_model_1_video_TinyYoloNet","test_whole_model_1_video_TinyYoloNet",test_whole_model_1_video_TinyYoloNet},
         {"test_whole_model_1_video_googleNet","test_whole_model_1_video_googleNet",test_whole_model_1_video_googleNet},
         {"test_whole_model_1_video_mnist","test_whole_model_1_video_mnist",test_whole_model_1_video_mnist},
-        {"test_whole_model_1_video_inception_v4","test_whole_model_1_video_inception_v4",test_whole_model_1_video_inception_v4},
         {"test_whole_model_1_video_inception_v3","test_whole_model_1_video_inception_v3",test_whole_model_1_video_inception_v3},
         {"test_whole_model_1_video_inception_v2","test_whole_model_1_video_inception_v2",test_whole_model_1_video_inception_v2},
         {"test_whole_model_1_video_inception_v1","test_whole_model_1_video_inception_v1",test_whole_model_1_video_inception_v1},
