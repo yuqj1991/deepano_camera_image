@@ -31,6 +31,7 @@ typedef enum {
         DP_CMD_GET_BLOB_MEAN_STD=66,
 	DP_CMD_STOP_PARSE_MODEL=67,
 	DP_CMD_IMAGE_BLOB_SIZE=68,
+	DP_CMD_SECOND_IMG_BUFFER=70,
 }dp_command_t;
 
 typedef enum {

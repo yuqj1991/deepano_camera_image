@@ -344,7 +344,7 @@ void test_start_video(int argc, char *argv[])
 	const char *win_name = "video";
 	namedWindow(win_name);
 	int key = -1;
-	for (int i = 0; i < 30000 && key == -1; ++i) {
+	for (;;) {
 		video_mutex.lock();
 		if (!bgr.empty())
 			imshow(win_name, bgr);

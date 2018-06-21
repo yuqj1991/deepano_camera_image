@@ -192,6 +192,15 @@ EXTERN DLL int dp_update_model_2(const char* filename);
 
 EXTERN DLL int dp_send_first_box_image(int box_num,dp_image_box_t *box);
 
+/** \ingroup dp_send_sec_image
+* send image buffer.
+*
+* 
+* \returns 0 if sucess, <0 if error occured.
+*/
+
+EXTERN DLL int dp_send_second_image(unsigned short* imagebuffer,int buffersize,int box_num);
+
 EXTERN DLL int dp_send_stop_cmd();
 /** \ingroup dp_update_firmware
 * update firmware.
