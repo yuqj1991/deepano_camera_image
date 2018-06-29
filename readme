@@ -1,7 +1,18 @@
 请仔细阅读本文本的内容:谢谢！
 -------------------------------
-2018.06.09:更新：test.cpp在图像显示回调函数中，添加锁
-
+2018.06.26:更新：test.cpp在图像显示回调函数中，添加锁
+新添加dp_send_second_image(unsigned short* imagebuffer,int buffersize,int box_num);
+ //imagebuffer，比如第一个模型分割出5个图，则imagebuffer是5个图的buffer，该数据类型为unsigned short*，也就是需要进行如下转换unsigned char->float->fp16;
+ buffersize总字节数，比如5个图的总字节数，
+ box_num，产生的这些buffer个数，比如说为5
+ ps，每个图的字节数应该为第二个模型的输入的图像的长×宽×3;
+最后，传回来的模型的结果数据类型是void*,需要做如下转换：void->unsigned short（类似于我在结果显示回调函数中的 u16* probabilities = (u16*)result）->float（类似于我在结果显示回调函数中的
+            resultfp32[i]= f16Tof32(probabilities[i]);）,这之后也就是你想要的结果特征	  
+	  
+PS:关于固件烧录软件，请下载百度云网盘：
+链接：https://pan.baidu.com/s/17omr5qlQ7WeCveAf5hE4ng 
+密码：2l58
+烧录方法：将模组与win电脑相连，点击该软件，出现画面，然后点击开始按钮，然后在固件更新栏里填写固件文件名，注意：将该固件移至该软件文件夹内
 
 -------------------------------
 2018.05.29:更新：为使板子通用固件的稳定性，将传入板子的模型1固定为55m，模型2固定为35m
@@ -35,8 +46,8 @@ dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);//解析模型�
 [3]linux下SDK中test.cpp下的编译步骤：
    sh ./install.sh
 执行：需要将ld_api.so加入到动态库当中，编译和执行是两种不同的
-调用方法：sudo ./dp_test [commond][options]  在主函数中有相关命令：例如打开摄像头：sudo  ./dp_test start_video或者测试tiny-yolo-v2模型，可按如下操作：sudo ./dp_test test_whole_model_1_video_tiny_yolo_v2
-或者其他模型，可参照test.cpp中的2343-2361中提供的接口，具体使用方法如，测试googleNet模型，则sudo ./dp_test test_whole_model_1_video_googleNet
+调用方法：sudo ./test [commond][options]  在主函数中有相关命令：例如打开摄像头：sudo  ./test start_video或者测试tiny-yolo-v2模型，可按如下操作：sudo ./test test_whole_model_1_video_tiny_yolo_v2
+或者其他模型，可参照test.cpp中的2343-2361中提供的接口，具体使用方法如，测试googleNet模型，则sudo ./test test_whole_model_1_video_googleNet
 [4]windows：可在vs2013,2015下编译，安装usb驱动的方法：访问http://zadig.akeo.ie，根据上面提示下载工具并安装驱动
    本套sdk附带的demo_model,目前只能在ubuntu16.04下使用，windows下没有集成开发，但是本套sdk提供了windows版本的dll和lib，是可以在windows下vs里面使用的.
 [5]本SDK相关API简介：

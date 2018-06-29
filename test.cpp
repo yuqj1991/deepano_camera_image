@@ -2347,6 +2347,66 @@ void test_whole_model_1_video_face(int argc, char *argv[])
 	destroyWindow(win_name);
 }
 
+void test_ncsdk_two_model_tuling(int argc,char *argv[])
+{
+       int ret;
+	const char *filename = "../tuling/pNet_graph1";
+
+	int blob_nums = 1; dp_blob_parm_t parms = {1,320,320,6400*2};
+        dp_netMean mean={127,127,127,1};
+	if (argc > 0)
+	{
+		filename = argv[0];
+		blob_nums = atoi(argv[1]);
+		for (int i = 0; i<blob_nums; i++)
+		{
+			parms.InputSize_height = atoi(argv[i * 3 + 2 + 0]);
+			parms.InputSize_width = atoi(argv[i * 3 + 2 + 1]);
+			parms.Output_num = atoi(argv[i * 3 + 2 + 2]);
+		}
+	}
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
+	test_update_model_parems(blob_nums, &parms);
+        dp_set_blob_mean_std(blob_nums,&mean);
+	ret = dp_update_model(filename);
+	if (ret == 0) {
+		printf("Test dp_update_model(%s) sucessfully!\n", filename);
+	}
+	else {
+		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
+	}
+	
+	DP_MODEL_NET net=DP_ALI_FACENET;
+	dp_register_video_frame_cb(video_callback, &net);
+	dp_register_box_device_cb(box_callback_model_demo,&net);
+        dp_register_fps_device_cb(fps_callback,&net);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
+	ret = dp_start_camera_video();
+	if (ret == 0) {
+		printf("Test test_start_video successfully!\n");
+	}
+	else {
+		printf("Test test_start_video failed! ret=%d\n", ret);
+	}
+
+	const char *win_name = "video";
+	namedWindow(win_name);
+	int key = -1;
+	for (;;) {
+		 video_mutex.lock();
+                 //clock_t start;
+                 //start=clock();
+		if (!bgr.empty())
+			imshow(win_name, bgr);
+ 
+                //printf("\ninterval = %d ms\n", start);
+		video_mutex.unlock();
+		key = waitKey(30);
+	}
+	destroyWindow(win_name);
+}
+
+
 testcase_t g_testcases[] =
 {
 	{"ping", NULL, test_ping},
@@ -2378,7 +2438,8 @@ testcase_t g_testcases[] =
         {"test_whole_model_1_video_jieshang","test_whole_model_1_video_jieshang",test_whole_model_1_video_jieshang},
         {"test_whole_model_1_video_face","test_whole_model_1_video_face",test_whole_model_1_video_face},
         {"test_whole_model_2_video_model_jingdong","test_whole_model_2_video_model_jingdong",test_whole_model_2_video_model_jingdong},
-        {"test_whole_model_2_video_tiny_yolo_v2","test_whole_model_2_video_tiny_yolo_v2",test_whole_model_2_video_tiny_yolo_v2}
+        {"test_whole_model_2_video_tiny_yolo_v2","test_whole_model_2_video_tiny_yolo_v2",test_whole_model_2_video_tiny_yolo_v2},
+        {"test_ncsdk_two_model_tuling","test_ncsdk_two_model_tuling",test_ncsdk_two_model_tuling}
 };
 int g_case_count = sizeof(g_testcases) / sizeof(testcase_t);
 
