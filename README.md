@@ -1,5 +1,183 @@
 请仔细阅读本文本的内容:谢谢！
 -------------------------------
+2018-07-05 新添接口，
+1、使用接口
+        int dp_send_second_image(unsigned short* imagebuffer,int buffersize,int box_num);
+2、调用方法逻辑：
+（1）、像之前的传入两个blob和相关的参数不变，在这之后，第一个模型解析摄像头buffer，并将结果返回给主机，主机接收，并同时接收传到主机的图像buffer（bgr），（接下来是你们需要操作的地方）：你们需要对这个buffer（变量bgr进行相关的操作（人脸对齐之类的）进行一些操作，产生一个或几个已处理好的buffer，注意（该buffer的数据类型为short，你需要将之转化为float32->float16类型），然后在box_callback_model_two_demo相应的模型接口下方添加代码，如下：
+
+----------------------------------------------------------
+类似双模型接口不需要做改变
+//双模型tiny_yolo_v2+tiny_yolo_v2
+void test_whole_model_2_video_tiny_yolo_v2(int argc, char *argv[])
+{
+	int ret;
+	const char *filename = "../TINY_YOLO_V2.Blob";//"/home/yu/tini_yolo.blob";
+        const char *filename2 = "../TINY_YOLO_V2.Blob";
+	int blob_nums = 2; dp_blob_parm_t parms[2] = {{0,416,416,18000*2},{0,416,416,18000*2}};
+        dp_netMean mean[2]={{0,0,0,255},{0,0,0,255}};
+        dp_set_blob_image_size(&BLOB_IMAGE_SIZE);
+	test_update_model_parems(blob_nums, parms);
+        dp_set_blob_mean_std(blob_nums,mean);
+	ret = dp_update_model(filename);
+        
+	if (ret == 0) {
+		printf("Test dp_update_model(%s) sucessfully!\n", filename);
+	}
+	else {
+		printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
+	}
+	ret = dp_update_model_2(filename2);
+	if (ret == 0) {
+		printf("Test dp_update_model_2(%s) sucessfully!\n", filename2);
+	}
+	else {
+		printf("Test dp_update_model_2(%s) failed ! ret=%d\n", filename2, ret);
+	}
+	DP_MODEL_NET net_1=DP_TINY_YOLO_V2_NET;
+	dp_register_box_device_cb(box_callback_model_two_demo, &net_1);	
+	DP_MODEL_NET net_2=DP_TINY_YOLO_V2_NET;
+	dp_register_second_box_device_cb(box_callback_model_demo,&net_2);
+	dp_register_video_frame_cb(video_callback, &net_1);
+        dp_register_fps_device_cb(fps_callback,&net_1);
+        dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);
+	ret = dp_start_camera_video();
+	if (ret == 0) {
+		printf("Test test_start_video successfully!\n");
+	}
+	else {
+		printf("Test test_start_video failed! ret=%d\n", ret);
+	}
+
+	const char *win_name = "video";
+	namedWindow(win_name);
+	int key = -1;
+        while(1){
+		video_mutex.lock();
+		if (!bgr.empty())
+			imshow(win_name, bgr);
+		video_mutex.unlock();
+		key = waitKey(30);
+	}
+	destroyWindow(win_name);
+}
+
+------------------------------------------------------------
+结果解析回调函数
+//双模型，解析获取box回传给板子
+void box_callback_model_two_demo(void *result,void *param)
+{
+  DP_MODEL_NET model=*((DP_MODEL_NET*)param);
+  switch (model)
+  {
+    
+	case DP_SSD_MOBILI_NET:
+	{
+	     char *category[]={"background","aeroplane","bicycle","bird","boat","bottle","bus","car","cat","chair","cow","diningtable",
+              "dog","horse","motorbike","person","pottedplant","sheep","sofa","train","tvmonitor"};
+		 u16* probabilities = (u16*)result;
+         unsigned int resultlen=707;
+         float*resultfp32;
+         resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
+         int img_width=1280;
+         int img_height=960;
+         for (u32 i = 0; i < resultlen; i++)
+            resultfp32[i]= f16Tof32(probabilities[i]);
+         int num_valid_boxes=int(resultfp32[0]);
+         int index=0;
+		 printf("num_valid_bxes:%d\n",num_valid_boxes);
+		 for(int box_index=0;box_index<num_valid_boxes;box_index++)
+		 {
+		   int base_index=7*box_index+7;
+		   if(resultfp32[base_index+6]<0||resultfp32[base_index+6]>=1||resultfp32[base_index+5]<0||resultfp32[base_index+5]>=1||resultfp32[base_index+4]<0||resultfp32[base_index+4]>=1||resultfp32[base_index+3]<0||resultfp32[base_index+3]>=1||resultfp32[base_index+2]>=1||resultfp32[base_index+2]<0||resultfp32[base_index+1]<0)
+		   {
+		   	   continue;
+		   }
+		   printf("%d %f %f %f %f %f\n",int(resultfp32[base_index+1]),resultfp32[base_index+2],resultfp32[base_index+3],resultfp32[base_index+4],resultfp32[base_index+5],resultfp32[base_index+6]);
+		   box_demo[index].x1=(int(resultfp32[base_index+3]*img_width)>0)?int(resultfp32[base_index+3]*img_width):0;
+		   box_demo[index].x2=(int(resultfp32[base_index+5]*img_width)<img_width)?int(resultfp32[base_index+5]*img_width):img_width;
+		   box_demo[index].y1=(int(resultfp32[base_index+4]*img_height)>0)?int(resultfp32[base_index+4]*img_height):0;	   
+		   box_demo[index].y2=(int(resultfp32[base_index+6]*img_height)<img_height)?int(resultfp32[base_index+6]*img_height):img_height;
+		   memcpy(categoles[index],category[int(resultfp32[base_index+1])],20);
+		   index++;
+		 }
+------------------------------------------------------
+以下代码，对你来说不需要，可以全部删掉
+                 num_box_demo=index; 
+                 int box_demo_num=0;
+		 if((num_valid_boxes<=2)&&(num_valid_boxes>0))
+		 {
+		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(num_valid_boxes*sizeof(dp_image_box_t));
+
+		   for (int i = 0; i < num_valid_boxes; ++i)
+           { 
+			  if(((box_demo[i].x2-box_demo[i].x1)!=0)&&((box_demo[i].y2-box_demo[i].y1)!=0))
+			  {
+			     box_second[box_demo_num].x1=box_demo[i].x1;
+			     box_second[box_demo_num].x2=box_demo[i].x2;
+				 if(box_second[box_demo_num].x2>img_width)
+				 	 box_second[box_demo_num].x2=img_width;
+			     box_second[box_demo_num].y1=box_demo[i].y1;	  
+			     box_second[box_demo_num].y2=box_demo[i].y2;
+				 if(box_second[box_demo_num].y2>img_height)
+				 	box_second[box_demo_num].y2=img_height;
+				 box_demo_num++;
+			  } 
+           }
+		   dp_send_first_box_image(box_demo_num, box_second);
+		   free(box_second);
+		 }
+		 else if(num_valid_boxes>2)
+		 { 
+		   dp_image_box_t *box_second=(dp_image_box_t*)malloc(2*sizeof(dp_image_box_t));
+		   for(int i=0;i<num_valid_boxes;i++)
+		   {
+		     if(((box_demo[i].x2-box_demo[i].x1)!=0)&&((box_demo[i].y2-box_demo[i].y1)!=0))
+			  {
+			     box_second[box_demo_num].x1=box_demo[i].x1;
+			     box_second[box_demo_num].x2=box_demo[i].x2;
+				 if(box_second[box_demo_num].x2>img_width)
+				 	 box_second[box_demo_num].x2=img_width;
+			     box_second[box_demo_num].y1=box_demo[i].y1;	  
+			     box_second[box_demo_num].y2=box_demo[i].y2;
+				 if(box_second[box_demo_num].y2>img_height)
+				 	box_second[box_demo_num].y2=img_height;
+				 box_demo_num++;
+			  } 
+			  if(box_demo_num==2)
+			  {
+			     break;
+			  }
+		   	}
+		   dp_send_first_box_image(2, box_second);		   
+		   free(box_second);
+		 }
+这部分需要删掉
+-----------------------------------------
+-----------------------------------------
+以下是你需要添加的代码：
+             第一步，上面ssd会产生很多box，你需要将这些box产生的坐标，在bgr（板子回传到主机的摄像头buffer，这是全局变量）上截取出这些相关的buffer，然后你们再做一些相关的处理
+             最后调用int dp_send_second_image(unsigned short* imagebuffer,int buffersize,int box_num);//buffersize总字节数，box_num，产生的这些buffer个数
+-----------------------------------------	          
+        free(resultfp32);
+		break;
+	  }
+
+dp_send_second_image(unsigned short* imagebuffer,int buffersize,int box_num);
+ //imagebuffer，比如第一个模型分割出5个图，则imagebuffer是5个图的buffer，该数据类型为unsigned short*，也就是需要进行如下转换unsigned char->float->fp16;
+ buffersize总字节数，比如5个图的总字节数，
+ box_num，产生的这些buffer个数，比如说为5
+ ps，每个图的字节数应该为第二个模型的输入的图像的长×宽×3;
+最后，传回来的模型的结果数据类型是void*,需要做如下转换：void->unsigned short（类似于我在结果显示回调函数中的 u16* probabilities = (u16*)result）->float（类似于我在结果显示回调函数中的
+            resultfp32[i]= f16Tof32(probabilities[i]);）,这之后也就是你想要的结果特征	  
+	  
+PS:关于固件烧录软件，请下载百度云网盘：
+链接：https://pan.baidu.com/s/17omr5qlQ7WeCveAf5hE4ng 
+密码：2l58
+烧录方法：将模组与win电脑相连，点击该软件，出现画面，然后点击开始按钮，然后在固件更新栏里填写固件文件名，注意：将该固件移至该软件文件夹内
+
+
+
 2018.06.26:更新：test.cpp在图像显示回调函数中，添加锁
 新添加dp_send_second_image(unsigned short* imagebuffer,int buffersize,int box_num);
  //imagebuffer，比如第一个模型分割出5个图，则imagebuffer是5个图的buffer，该数据类型为unsigned short*，也就是需要进行如下转换unsigned char->float->fp16;
