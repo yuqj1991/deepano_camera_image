@@ -4,7 +4,7 @@
 测试model：链接: https://pan.baidu.com/s/1xf7sqFbwDdqisszKilpb0w 密码: 8ajp
 
 
-一、ubuntu_16.04:环境：opencv3.4.1 usb-1.0(官网下载，libusb-1.0.22)
+一、ubuntu_16.04实体机:环境：opencv3.4.1 usb-1.0(官网下载，libusb-1.0.22)
 编译方法：
 方法1)
         cd linux_build;
