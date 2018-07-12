@@ -169,14 +169,8 @@ dp_send_second_image(unsigned short* imagebuffer,int buffersize,int box_num);
  box_num，产生的这些buffer个数，比如说为5
  ps，每个图的字节数应该为第二个模型的输入的图像的长×宽×3;
 最后，传回来的模型的结果数据类型是void*,需要做如下转换：void->unsigned short（类似于我在结果显示回调函数中的 u16* probabilities = (u16*)result）->float（类似于我在结果显示回调函数中的
-            resultfp32[i]= f16Tof32(probabilities[i]);）,这之后也就是你想要的结果特征	  
-	  
-PS:关于固件烧录软件，请下载百度云网盘：
-链接：https://pan.baidu.com/s/17omr5qlQ7WeCveAf5hE4ng 
-密码：2l58
-烧录方法：将模组与win电脑相连，点击该软件，出现画面，然后点击开始按钮，然后在固件更新栏里填写固件文件名，注意：将该固件移至该软件文件夹内
-
-
+            resultfp32[i]= f16Tof32(probabilities[i]);  
+	 
 
 2018.06.26:更新：test.cpp在图像显示回调函数中，添加锁
 新添加dp_send_second_image(unsigned short* imagebuffer,int buffersize,int box_num);
@@ -187,10 +181,6 @@ PS:关于固件烧录软件，请下载百度云网盘：
 最后，传回来的模型的结果数据类型是void*,需要做如下转换：void->unsigned short（类似于我在结果显示回调函数中的 u16* probabilities = (u16*)result）->float（类似于我在结果显示回调函数中的
             resultfp32[i]= f16Tof32(probabilities[i]);）,这之后也就是你想要的结果特征	  
 	  
-PS:关于固件烧录软件，请下载百度云网盘：
-链接：https://pan.baidu.com/s/17omr5qlQ7WeCveAf5hE4ng 
-密码：2l58
-烧录方法：将模组与win电脑相连，点击该软件，出现画面，然后点击开始按钮，然后在固件更新栏里填写固件文件名，注意：将该固件移至该软件文件夹内
 
 -------------------------------
 2018.05.29:更新：为使板子通用固件的稳定性，将传入板子的模型1固定为55m，模型2固定为35m
@@ -219,16 +209,8 @@ PS:关于固件烧录软件，请下载百度云网盘：
 dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);//解析模型所需要的时间注册回调函数，blob_parse_callback（）回调函数
 此为回调函数，大约每隔40ms向主机发送数据
 -------------------------------
-[1]本套模组（ma2450）集有摄像头ov5658,可用于解析caffemodel的大部分算法模型，使用之前，需要使用ncsdk的转换工具mvNCCompiler，将caffemodel转化为mv模组可用的graph格式数据.
-[2]测试model：链接: https://pan.baidu.com/s/1xf7sqFbwDdqisszKilpb0w 密码: 8ajp
-[3]linux下SDK中test.cpp下的编译步骤：
-   sh ./install.sh
-执行：需要将ld_api.so加入到动态库当中，编译和执行是两种不同的
-调用方法：sudo ./test [commond][options]  在主函数中有相关命令：例如打开摄像头：sudo  ./test start_video或者测试tiny-yolo-v2模型，可按如下操作：sudo ./test test_whole_model_1_video_tiny_yolo_v2
-或者其他模型，可参照test.cpp中的2343-2361中提供的接口，具体使用方法如，测试googleNet模型，则sudo ./test test_whole_model_1_video_googleNet
-[4]windows：可在vs2013,2015下编译，安装usb驱动的方法：访问http://zadig.akeo.ie，根据上面提示下载工具并安装驱动
-   本套sdk附带的demo_model,目前只能在ubuntu16.04下使用，windows下没有集成开发，但是本套sdk提供了windows版本的dll和lib，是可以在windows下vs里面使用的.
-[5]本SDK相关API简介：
+
+[1]本SDK相关API简介：
    1、typedef void(*dp_video_frame_cb_t)(dp_img_t *img, void *param);//接收从设备返回的视频流回调接口
    2、typedef void(*dp_first_blob_outresult_back_cb_t)(float * result,void *param);int dp_register_video_frame_cb(dp_video_frame_cb_t cb, void *param);//接收解析第一blob之后的原始结果的回调函数接口
    3、typedef void(*dp_send_to_device_box_cb_t)(dp_image_box_t *box,void *param);//如果解析两个blob，则调用此回调函数，向设备端传输minibox坐标值
@@ -239,7 +221,7 @@ dp_register_parse_blob_time_device_cb(blob_parse_callback,NULL);//解析模型�
    8、EXTERN DLL int dp_start_camera_video();//打开摄像头获取视频流
    9、EXTERN DLL int dp_start_camera();//打开摄像头
 
-[6]使用测试用例步骤：
+[2]使用测试用例步骤：
    1-- cdk: 解析blob的一般步骤：
    开机（识别usb设备，需登上10s左右）->向设备端传输一个或两个blob的相关初始化参数->传输相应个数的blob->传输blob的mean和std(如果没有，则必须设mean为0,std为1,否则系统报错)->调用dp_start_camera()接口，设备端开始解析图像。
   （1）使用板子只解析一个blob，则可以借鉴test.cpp中的接口中的test_whole_model_1_video_SSD_MobileNet接口方法，以下详细说明
@@ -263,7 +245,7 @@ void test_whole_model_1_video_SSD_MobileNet(int argc, char *argv[])
 	}
 
 	test_update_model_parems(blob_nums, &parms);//传入板子的模型参数
-    dp_set_blob_mean_std(blob_nums,&mean);//向板子传输图像的均值和std
+        dp_set_blob_mean_std(blob_nums,&mean);//向板子传输图像的均值和std
 	ret = dp_update_model(filename);
 	if (ret == 0) {
 		printf("Test dp_update_model(%s) sucessfully!\n", filename);
@@ -516,14 +498,3 @@ case DP_TINI_YOLO_NET:
    2--cdk:解析blob之后的原始数据结果为void*数据类型，该数据的后续处理过程，可通过注册回调函数dp_register_box_device_cb(dp_first_blob_outresult_back_cb_t cb, void *param)进行相应处理
    与设备通信的相关命令在dp_type.h文件中
    ps:this version of cdk only run 8 shaves with blob,the other 4 shaves are used to image preprocessing. 
-[7]通过模型测试：
-   ncappzoo里面大部分模型都可运行，只有inception_v4模型，目前有些问题，注意:
-  1）.tinyYolo:解析算法不是太准确,如果你有更好的解析代码，可以联系我：yuqj@deepano.com
-  后续我还会在继续研究解析算法，yolo一旦有更好的解析算法，我会持续更新的
-[8]注意：
-  1).本测试样例所有模型的解析算法均为本人借鉴ncappzoo里面的解析算法，可能会有些不准确，如果您有非常好的准确的解析算法，请与我联系:yuqj@deepano.com,非常感谢
-  2).本套ma2450模组芯片，host端一旦终止，如果想要再次运行host端程序，需要重新插拔usb
-  3).本套ma2450模组芯片，host端不可直接这样执行 sudo ./dp_test这样的命令,只能一次运行一个接口，例如：sudo ./dp_test test_whole_model_1_video_TinyYoloNet,这是因为直接运行，包含运行了所有接口，会导致运行更新固件接口，会损坏固件
-  4).本套ma2450模组芯片，device端图像前处理方法均为resize->yuv->rgb->fp16->bgr;因此本套所有模型的结果可能不会非常准确，如果客户有不同的图像前处理方式，需要单独定制
-  5).本套ma2450模组芯片, Blob_size_1<=150M,Blob_size_2<=85M
-

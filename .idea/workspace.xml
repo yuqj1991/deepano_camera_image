@@ -11,42 +11,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="51e0625d-85fb-4c8d-9d64-4402162f4351" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/include/model_sample.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/include/post_image.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/include/share.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/include/share_utils.h" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/model_sample.c" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/post_image.cpp" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/share_utils.c" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/video_result_callback.c" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Common.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Common.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DPMV2450模块_常见问题_Q&amp;A_v0.1.doc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/DPMV2450模块规格书+v0.8+.pdf" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Fp16Convert.c" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Fp16Convert.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Region.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/Region.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/categories.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/cdk_FLIC_1xOV5658_TF.mvcmd" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dp_api.doc" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dp_api.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dp_api_type.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/dp_debug.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/install.sh" beforeDir="false" afterPath="$PROJECT_DIR$/install.sh" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/interpret_output.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/interpret_output.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/labels.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/libdp_api.so" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/libdp_api_arm.so" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/mv_types.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/pthread.h" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/readme" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/synset_words.txt" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test.cpp" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/utils_convert.cpp" beforeDir="false" />
-    </list>
+    <list default="true" id="51e0625d-85fb-4c8d-9d64-4402162f4351" name="Default" comment="" />
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -58,7 +23,7 @@
   <component name="ExecutionTargetManager" SELECTED_TARGET="CMakeBuildProfile:Debug" />
   <component name="FileEditorManager">
     <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-      <file leaf-file-name="CMakeLists.txt" pinned="false" current-in-tab="true">
+      <file leaf-file-name="CMakeLists.txt" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/CMakeLists.txt">
           <provider selected="true" editor-type-id="text-editor">
             <state relative-caret-position="110">
@@ -124,11 +89,11 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="share.h" pinned="false" current-in-tab="false">
+      <file leaf-file-name="share.h" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/include/share.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="902">
-              <caret line="42" column="5" selection-start-line="42" selection-start-column="5" selection-end-line="42" selection-end-column="5" />
+            <state relative-caret-position="660">
+              <caret line="31" column="1" lean-forward="true" selection-start-line="31" selection-start-column="1" selection-end-line="31" selection-end-column="1" />
             </state>
           </provider>
         </entry>
@@ -249,12 +214,12 @@
       <updated>1531315421223</updated>
       <workItem from="1531315422493" duration="259000" />
       <workItem from="1531315714226" duration="97000" />
-      <workItem from="1531317030138" duration="14300000" />
+      <workItem from="1531317030138" duration="15051000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="14656000" />
+    <option name="totallyTimeSpent" value="15407000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="1984" y="-11" width="1857" height="1092" extended-state="6" />
@@ -363,13 +328,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/include/share.h">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="902">
-          <caret line="42" column="5" selection-start-line="42" selection-start-column="5" selection-end-line="42" selection-end-column="5" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/share_utils.c">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="994">
@@ -426,6 +384,13 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="110">
           <caret line="5" column="35" selection-start-line="5" selection-start-column="35" selection-end-line="5" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/include/share.h">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="660">
+          <caret line="31" column="1" lean-forward="true" selection-start-line="31" selection-start-column="1" selection-end-line="31" selection-end-column="1" />
         </state>
       </provider>
     </entry>
