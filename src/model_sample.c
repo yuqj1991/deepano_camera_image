@@ -747,7 +747,7 @@ void test_tiny_yolo_v2(int argc, char *argv[])
 {
     int ret;
     const char *filename = "../TINY_YOLO_V2.Blob";
-    int blob_nums = 1; dp_blob_parm_t parms = {0,640,640,4320*2};
+    int blob_nums = 1; dp_blob_parm_t parms = {0,416,416,18000*2};
     dp_netMean mean={0,0,0,255};
     if (argc > 0)
     {
