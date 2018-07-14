@@ -12,6 +12,7 @@
         cd linux_build;
         make
 方法2）
+        mkdir cmake
         cd cmake
         cmake ..
         make
