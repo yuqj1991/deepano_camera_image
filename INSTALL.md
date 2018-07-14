@@ -1,8 +1,10 @@
 ﻿本套SDK给的例呈编译方法：
 
 本套模组（ma2450）集有摄像头ov5658,可用于解析caffemodel的大部分算法模型，客户开发使用自己的模型之前，需要使用ncsdk的转换工具mvNCCompiler，将caffemodel转化为mv模组可用的graph格式数据.
-测试model：链接: https://pan.baidu.com/s/1xf7sqFbwDdqisszKilpb0w 密码: 8ajp
+测试model：链接: https://pan.baidu.com/s/1vG0964C2_tnYkHqhjEFI_g 密码: phra
 
+
+本套模组首推（最好）在ubuntu16.04LTS上运行，后期推送新的固件也是在ubuntu上测试，win10vs2015实测也可以运行。
 
 一、ubuntu_16.04实体机:环境：opencv3.4.1 usb-1.0(官网下载，libusb-1.0.22)
 编译方法：
