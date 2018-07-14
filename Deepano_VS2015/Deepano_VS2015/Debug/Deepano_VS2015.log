@@ -1,0 +1,12 @@
+﻿  stdafx.cpp
+  test.cpp
+c:\users\wlf\desktop\deepano_sdk_and_examples\src\test.cpp(93): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "stdafx.h"”?
+  Region.cpp
+c:\users\wlf\desktop\deepano_sdk_and_examples\src\region.cpp(310): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "stdafx.h"”?
+  post_image.cpp
+c:\users\wlf\desktop\deepano_sdk_and_examples\src\post_image.cpp(347): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "stdafx.h"”?
+  interpret_output.cpp
+c:\users\wlf\desktop\deepano_sdk_and_examples\src\interpret_output.cpp(244): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "stdafx.h"”?
+  Common.cpp
+c:\users\wlf\desktop\deepano_sdk_and_examples\src\common.cpp(94): fatal error C1010: 在查找预编译头时遇到意外的文件结尾。是否忘记了向源中添加“#include "stdafx.h"”?
+  正在生成代码...

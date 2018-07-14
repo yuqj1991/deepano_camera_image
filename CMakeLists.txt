@@ -18,7 +18,7 @@ link_directories(${Deepano_DIR})
 link_libraries(${Deepano_LIB})
 
 find_package(Threads REQUIRED)
-find_package(OpenCV REQUIRED)
+#find_package(OpenCV REQUIRED)
 
 
 include_directories(include)

@@ -1,4 +1,4 @@
-本套SDK给的例呈编译方法：
+﻿本套SDK给的例呈编译方法：
 
 本套模组（ma2450）集有摄像头ov5658,可用于解析caffemodel的大部分算法模型，客户开发使用自己的模型之前，需要使用ncsdk的转换工具mvNCCompiler，将caffemodel转化为mv模组可用的graph格式数据.
 测试model：链接: https://pan.baidu.com/s/1xf7sqFbwDdqisszKilpb0w 密码: 8ajp
@@ -54,7 +54,7 @@
         打开Deepano_VS2015.sln
         重新编译
         使用方法同上
-        注意：由于vs2015生成的exe文件路径的不同，因此可能你在测试的时候，需要修改model_sample.c中文件的路径。
+        注意：vs2015工程属性我在设置目录的时候，设置成了绝对路径，你需要做相应修改，由于vs2015生成的exe文件路径的不同，因此可能你在测试的时候，需要修改model_sample.c中文件的路径。
 三、通过模型测试：
    ncappzoo里面大部分模型都可运行，只有inception_v2模型，目前有些问题，注意：
         1).本测试样例所有模型的解析算法均为本人借鉴ncappzoo里面的解析算法，可能会有些不准确，如果您有非常好的准确的解析算法，请与我联系:yuqj@deepano.com,非常感谢
