@@ -1,3 +1,0 @@
-/home/chenchen/Deepano_SDK_AND_EXAMPLES/cmake-build-debug/CMakeFiles/edit_cache.dir
-/home/chenchen/Deepano_SDK_AND_EXAMPLES/cmake-build-debug/CMakeFiles/rebuild_cache.dir
-/home/chenchen/Deepano_SDK_AND_EXAMPLES/cmake-build-debug/CMakeFiles/Deepano_SDK_AND_EXAMPLES.dir
