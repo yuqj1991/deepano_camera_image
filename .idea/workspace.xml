@@ -11,12 +11,7 @@
     </configurations>
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="51e0625d-85fb-4c8d-9d64-4402162f4351" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/INSTALL.md" beforeDir="false" afterPath="$PROJECT_DIR$/INSTALL.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/README.md" beforeDir="false" afterPath="$PROJECT_DIR$/README.md" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/include/dp_api.h" beforeDir="false" afterPath="$PROJECT_DIR$/include/dp_api.h" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/model_sample.c" beforeDir="false" afterPath="$PROJECT_DIR$/src/model_sample.c" afterDir="false" />
-    </list>
+    <list default="true" id="51e0625d-85fb-4c8d-9d64-4402162f4351" name="Default" comment="" />
     <ignored path="$PROJECT_DIR$/cmake-build-debug/" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -88,8 +83,8 @@
       <file leaf-file-name="video_result_callback.c" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/video_result_callback.c">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="286">
-              <caret line="13" selection-start-line="13" selection-end-line="13" />
+            <state relative-caret-position="242">
+              <caret line="11" selection-start-line="11" selection-end-line="11" />
             </state>
           </provider>
         </entry>
@@ -97,7 +92,7 @@
       <file leaf-file-name="share.h" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/include/share.h">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="660">
+            <state relative-caret-position="197">
               <caret line="31" column="1" selection-start-line="31" selection-start-column="1" selection-end-line="31" selection-end-column="1" />
             </state>
           </provider>
@@ -220,19 +215,19 @@
       <workItem from="1531315422493" duration="259000" />
       <workItem from="1531315714226" duration="97000" />
       <workItem from="1531317030138" duration="15051000" />
-      <workItem from="1531458315696" duration="599000" />
+      <workItem from="1531458315696" duration="600000" />
     </task>
     <servers />
   </component>
   <component name="TimeTrackingManager">
-    <option name="totallyTimeSpent" value="16006000" />
+    <option name="totallyTimeSpent" value="16007000" />
   </component>
   <component name="ToolWindowManager">
     <frame x="1984" y="-11" width="1857" height="1092" extended-state="6" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" visible="true" weight="0.14449291" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.14449291" />
       <window_info anchor="bottom" id="TODO" order="6" />
-      <window_info anchor="bottom" id="CMake" order="7" />
+      <window_info active="true" anchor="bottom" id="CMake" order="7" visible="true" weight="0.3294979" />
       <window_info anchor="bottom" id="Event Log" order="7" side_tool="true" />
       <window_info anchor="bottom" id="Version Control" order="7" />
       <window_info anchor="bottom" id="Run" order="2" />
@@ -426,8 +421,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/src/video_result_callback.c">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="286">
-          <caret line="13" selection-start-line="13" selection-end-line="13" />
+        <state relative-caret-position="242">
+          <caret line="11" selection-start-line="11" selection-end-line="11" />
         </state>
       </provider>
     </entry>
@@ -447,7 +442,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/include/share.h">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="660">
+        <state relative-caret-position="197">
           <caret line="31" column="1" selection-start-line="31" selection-start-column="1" selection-end-line="31" selection-end-column="1" />
         </state>
       </provider>

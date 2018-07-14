@@ -27,9 +27,9 @@
         dp_blob_parm_t
         {
                 int IsTensor_model;  //神经网络是tensor网络框架还是caffe网络框架
-	        int InputSize_width; //神经网络入口的图片尺寸
-	        int InputSize_height;//神经网络入口的图片尺寸
-	        int Output_num;//神经网络解析之后原始的数据长度，等于神经棒上mvnvGetResult()接口获取的原始数据长度; 
+                int InputSize_width; //神经网络入口的图片尺寸
+                int InputSize_height;//神经网络入口的图片尺寸
+                int Output_num;//神经网络解析之后原始的数据长度，等于神经棒上mvnvGetResult()接口获取的原始数据长度; 
         }
         dp_image_box_t{
                 int x1;//box宽起始位
@@ -70,7 +70,7 @@
 
 
 模组解析模型的一般步骤：
-   开机（识别usb设备，需登上10s左右）->向设备端传输一个或两个blob的相关初始化参数->传输相应个数的blob->传输blob的mean和std(如果没有，则必须设mean为0,std为1,否则系统报错)->调用dp_start_camera()接口，设备端开始解析图像。
+        开机（识别usb设备，需登上10s左右）->向设备端传输一个或两个blob的相关初始化参数->传输相应个数的blob->传输blob的mean和std(如果没有，则必须设mean为0,std为1,否则系统报错)->调用dp_start_camera()接口，设备端开始解析图像。
    
 [3]测试样例调用接口——单模型调用接口逻辑，以ssd_mobilenet为例：
 
