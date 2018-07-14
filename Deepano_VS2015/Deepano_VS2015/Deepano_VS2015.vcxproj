@@ -19,10 +19,10 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{808F3749-3E8C-40C8-9626-A6B735F550F9}</ProjectGuid>
+    <ProjectGuid>{8B42F466-8831-4235-A53B-FF6B312C6472}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Deepano_VS2015</RootNamespace>
-    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -96,15 +96,19 @@
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
-      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeader>NotUsing</PrecompiledHeader>
       <WarningLevel>Level3</WarningLevel>
       <Optimization>Disabled</Optimization>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
+      <AdditionalIncludeDirectories>C:\Users\WLF\Desktop\Deepano_SDK_AND_EXAMPLES;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CompileAs>Default</CompileAs>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\WLF\Desktop\Deepano_SDK_AND_EXAMPLES\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>libusb-1.0.lib;opencv_world341.lib;dp_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -133,7 +137,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>C:\Users\WLF\Desktop\Deepano_SDK_AND_EXAMPLES;C:\Users\WLF\Desktop\Deepano_SDK_AND_EXAMPLES\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\WLF\Desktop\Deepano_SDK_AND_EXAMPLES;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -141,39 +145,24 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>C:\Users\WLF\Desktop\Deepano_SDK_AND_EXAMPLES\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>dp_api.lib;opencv_world341.lib;libusb_1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>libusb-1.0.lib;opencv_world341.lib;dp_api.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\include\Common.h" />
-    <ClInclude Include="..\..\include\dp_api.h" />
-    <ClInclude Include="..\..\include\dp_api_type.h" />
-    <ClInclude Include="..\..\include\dp_debug.h" />
-    <ClInclude Include="..\..\include\Fp16Convert.h" />
-    <ClInclude Include="..\..\include\interpret_output.h" />
-    <ClInclude Include="..\..\include\model_sample.h" />
-    <ClInclude Include="..\..\include\mv_types.h" />
-    <ClInclude Include="..\..\include\post_image.h" />
-    <ClInclude Include="..\..\include\Region.h" />
-    <ClInclude Include="..\..\include\share.h" />
-    <ClInclude Include="..\..\include\share_utils.h" />
+    <ClInclude Include="dp_api.h" />
+    <ClInclude Include="dp_api_type.h" />
+    <ClInclude Include="dp_debug.h" />
+    <ClInclude Include="Fp16Convert.h" />
+    <ClInclude Include="mv_types.h" />
     <ClInclude Include="stdafx.h" />
     <ClInclude Include="targetver.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="..\..\src\Common.cpp" />
-    <ClCompile Include="..\..\src\fp16.c" />
-    <ClCompile Include="..\..\src\Fp16Convert.c" />
-    <ClCompile Include="..\..\src\interpret_output.cpp" />
-    <ClCompile Include="..\..\src\model_sample.c" />
-    <ClCompile Include="..\..\src\post_image.cpp" />
-    <ClCompile Include="..\..\src\Region.cpp" />
-    <ClCompile Include="..\..\src\share_utils.c" />
-    <ClCompile Include="..\..\src\test.cpp" />
-    <ClCompile Include="..\..\src\video_result_callback.c" />
+    <ClCompile Include="Deepano_VS2015.cpp" />
+    <ClCompile Include="Fp16Convert.c" />
     <ClCompile Include="stdafx.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>

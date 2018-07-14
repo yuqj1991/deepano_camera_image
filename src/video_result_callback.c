@@ -1,8 +1,6 @@
 //
 // Created by chenchen on 12/07/18.
 //
-
-
 #include "post_image.h"
 POST_IMAGE_MODEL sample_model;
 double Sum_blob_parse_time=0;

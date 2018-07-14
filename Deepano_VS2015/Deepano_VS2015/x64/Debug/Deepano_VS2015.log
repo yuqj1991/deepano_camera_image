@@ -1,0 +1,11 @@
+﻿  stdafx.cpp
+  Deepano_VS2015.cpp
+c:\users\wlf\desktop\deepano_sdk_and_examples\deepano_vs2015\deepano_vs2015\deepano_vs2015.cpp(23): warning C4005: “UNUSED”: 宏重定义
+  c:\users\wlf\desktop\deepano_sdk_and_examples\deepano_vs2015\deepano_vs2015\mv_types.h(44): note: 参见“UNUSED”的前一个定义
+c:\users\wlf\desktop\deepano_sdk_and_examples\deepano_vs2015\deepano_vs2015\deepano_vs2015.cpp(85): warning C4244: “=”: 从“double”转换到“int”，可能丢失数据
+  Fp16Convert.c
+Deepano_VS2015.obj : error LNK2019: 无法解析的外部符号 "void __cdecl cv::cvtColor(class cv::debug_build_guard::_InputArray const &,class cv::debug_build_guard::_OutputArray const &,int,int)" (?cvtColor@cv@@YAXAEBV_InputArray@debug_build_guard@1@AEBV_OutputArray@31@HH@Z)，该符号在函数 "void __cdecl video_callback(struct dp_img_t *,void *)" (?video_callback@@YAXPEAUdp_img_t@@PEAX@Z) 中被引用
+Deepano_VS2015.obj : error LNK2019: 无法解析的外部符号 "void __cdecl cv::rectangle(class cv::debug_build_guard::_InputOutputArray const &,class cv::Point_<int>,class cv::Point_<int>,class cv::Scalar_<double> const &,int,int,int)" (?rectangle@cv@@YAXAEBV_InputOutputArray@debug_build_guard@1@V?$Point_@H@1@1AEBV?$Scalar_@N@1@HHH@Z)，该符号在函数 "void __cdecl video_callback(struct dp_img_t *,void *)" (?video_callback@@YAXPEAUdp_img_t@@PEAX@Z) 中被引用
+Deepano_VS2015.obj : error LNK2019: 无法解析的外部符号 "void __cdecl cv::putText(class cv::debug_build_guard::_InputOutputArray const &,class cv::String const &,class cv::Point_<int>,int,double,class cv::Scalar_<double>,int,int,bool)" (?putText@cv@@YAXAEBV_InputOutputArray@debug_build_guard@1@AEBVString@1@V?$Point_@H@1@HNV?$Scalar_@N@1@HH_N@Z)，该符号在函数 "void __cdecl video_callback(struct dp_img_t *,void *)" (?video_callback@@YAXPEAUdp_img_t@@PEAX@Z) 中被引用
+Deepano_VS2015.obj : error LNK2019: 无法解析的外部符号 "void __cdecl cv::imshow(class cv::String const &,class cv::debug_build_guard::_InputArray const &)" (?imshow@cv@@YAXAEBVString@1@AEBV_InputArray@debug_build_guard@1@@Z)，该符号在函数 "void __cdecl test_start_video(int,char * * const)" (?test_start_video@@YAXHQEAPEAD@Z) 中被引用
+C:\Users\WLF\Desktop\Deepano_SDK_AND_EXAMPLES\Deepano_VS2015\x64\Debug\Deepano_VS2015.exe : fatal error LNK1120: 4 个无法解析的外部命令
