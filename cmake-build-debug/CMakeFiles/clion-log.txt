@@ -1,5 +1,0 @@
-/home/chenchen/Downloads/clion-2018.1.2/bin/cmake/bin/cmake -DCMAKE_BUILD_TYPE=Debug -G "CodeBlocks - Unix Makefiles" /home/chenchen/Deepano_SDK_AND_EXAMPLES
--- Found CUDA: /usr/local/cuda-8.0 (found suitable exact version "8.0") 
--- Configuring done
--- Generating done
--- Build files have been written to: /home/chenchen/Deepano_SDK_AND_EXAMPLES/cmake-build-debug

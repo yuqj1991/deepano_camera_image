@@ -47,7 +47,7 @@ void test_googleNet(int argc, char *argv[])
     else {
         printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
     }
-    FILE *fp=fopen("synset_words.txt","r");
+    FILE *fp=fopen("doc/synset_words.txt","r");
     if(fp==NULL)
     {
         printf("can not open the file\n");
@@ -286,7 +286,7 @@ void test_Resnet_18(int argc, char *argv[])
     else {
         printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
     }
-    FILE *fp=fopen("synset_words.txt","r");
+    FILE *fp=fopen("doc/synset_words.txt","r");
     if(fp==NULL)
     {
         printf("can not open the file\n");
@@ -364,7 +364,7 @@ void test_SqueezeNet(int argc, char *argv[])
         printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
     }
 
-    FILE *fp=fopen("synset_words.txt","r");
+    FILE *fp=fopen("doc/synset_words.txt","r");
     if(fp==NULL)
     {
         printf("can not open the file\n");
@@ -495,7 +495,7 @@ void test_inception(int argc, char *argv[])
     else {
         printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
     }
-    FILE *fp=fopen("categories.txt","r");
+    FILE *fp=fopen("doc/categories.txt","r");
     if(fp==NULL)
     {
         printf("can not open the file\n");
@@ -617,7 +617,7 @@ void test_mobilenets(int argc, char *argv[])
     else {
         printf("Test dp_update_model(%s) failed ! ret=%d\n", filename, ret);
     }
-    FILE *fp=fopen("labels.txt","r");
+    FILE *fp=fopen("doc/labels.txt","r");
     if(fp==NULL)
     {
         printf("can not open the file\n");
@@ -691,7 +691,7 @@ void test_ssd_resnet_model(int argc, char *argv[])
     else {
         printf("Test dp_update_model_2(%s) failed ! ret=%d\n", filename2, ret);
     }
-    FILE *fp=fopen("synset_words.txt","r");
+    FILE *fp=fopen("doc/synset_words.txt","r");
     if(fp==NULL)
     {
         printf("can not open the file\n");
@@ -716,7 +716,7 @@ void test_ssd_resnet_model(int argc, char *argv[])
     }
     fclose(fp);
     DP_MODEL_NET net_1=DP_SSD_MOBILI_NET;
-    dp_register_box_device_cb(/*box_callback_model_two_demo*/cdk_result_model, &net_1);
+    dp_register_box_device_cb(/*box_callback_model_two_demo*/cdk_two_result_model, &net_1);
     DP_MODEL_NET net_2=DP_RES_NET;
     dp_register_second_box_device_cb(cdk_result_model,&net_2);
     dp_register_video_frame_cb(video_callback, &net_1);
@@ -820,7 +820,7 @@ void test_ssd_googlenet_model(int argc, char *argv[])
     else {
         printf("Test dp_update_model_2(%s) failed ! ret=%d\n", filename2, ret);
     }
-    FILE *fp=fopen("synset_words.txt","r");
+    FILE *fp=fopen("doc/synset_words.txt","r");
     if(fp==NULL)
     {
         printf("can not open the file\n");
