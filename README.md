@@ -1,7 +1,7 @@
 请仔细阅读本文本的内容:谢谢！
 
 安装及使用方法请阅读install.md
-更新固件方法请阅读firmware/update.md
+更新固件方法请阅读firmware/update_firmware.docx
 接口说明及使用方法请阅读doc/API_and_GUIDE.md
 固件路径：当前目录，firmware文件夹，固件名deepano_base.mvcmd
 
