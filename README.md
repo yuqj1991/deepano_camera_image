@@ -6,7 +6,7 @@
 -------------------------------
 2018-07-05 新添接口:  
 1、使用接口  
-         int dp_send_second_image(unsigned short* imagebuffer,int buffersize,int box_num);
+          int dp_send_second_image(unsigned short* imagebuffer,int buffersize,int box_num);
         
 -------------------------------
 
