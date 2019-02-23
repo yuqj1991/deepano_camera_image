@@ -746,8 +746,8 @@ void test_ssd_resnet_model(int argc, char *argv[])
 void test_tiny_yolo_v2(int argc, char *argv[])
 {
     int ret;
-    const char *filename = "../TINY_YOLO_V2.Blob";
-    int blob_nums = 1; dp_blob_parm_t parms = {0,416,416,18000*2};
+    const char *filename = "../model/tiny-yolo-voc.graph";  //yuqj
+    int blob_nums = 1; dp_blob_parm_t parms = {0,416,416,20*2};  //yuqj
     dp_netMean mean={0,0,0,255};
     if (argc > 0)
     {

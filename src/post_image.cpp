@@ -280,6 +280,8 @@ void POST_IMAGE_MODEL::print_mobilinet_net_result(void *fathomOutput)
 }
 void POST_IMAGE_MODEL::print_tiny_yolov2_result(void *fathomOutput,Box *box_demo,int *num_box_demo)
 {
+	printf("----------------tiny_yolov2,cdk_result\n");  //yuqj
+	return; //yuqj
     u16* probabilities = (u16*)fathomOutput;
     unsigned int resultlen=18000;
     std::vector<DetectedObject> results;

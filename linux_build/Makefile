@@ -18,7 +18,7 @@ OBJS            := ${SRC_DIR}/Common.o \
                    ${SRC_DIR}/interpret_output.o  \
                    ${SRC_DIR}/model_sample.o  \
                    ${SRC_DIR}/test.o
-TARGET          := ../Deepano_cdk_TEST
+TARGET          := ../deepano_camera
 SRC_DIR         :=${SRC_DIR}/Common.cpp ${SRC_DIR}/fp16.c ${SRC_DIR}/share_utils.c ${SRC_DIR}/post_image.cpp ${SRC_DIR}/video_result_callback.c ${SRC_DIR}/Fp16Convert.c ${SRC_DIR}/interpret_output.cpp ${SRC_DIR}/model_sample.c ${SRC_DIR}/test.cpp
 DEPS := ${SRC_DIR:.c=.d}
 DEPS += ${SRC_DIR:.cpp=.d}
