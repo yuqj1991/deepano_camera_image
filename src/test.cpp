@@ -13,30 +13,10 @@ typedef struct testcase_t {
 testcase_t g_testcases[] =
 {
 	{"ping", NULL, test_ping},
-	{ "version", NULL, test_version },
-	{ "hardware_test", NULL, test_hardware_test },	
-	{ "get_frame", "get_frame", test_get_frame },
-#ifdef SUPPORT_OPENCV
-	{ "start_video", "start_video", test_start_video },
-#endif
-	{ "start_camera", "start_camera", test_start_camera },
-#ifdef SUPPORT_OPENCV
-	{ "get_frame", "get_frame", test_get_frame },
-#endif
-	{"stop_camera", "stop_camera", test_stop_camera },
-	{"squeezeNet","test_SqueezeNet",test_SqueezeNet},
 	{"ssd_mobileNet","test_SSD_MobileNet",test_SSD_MobileNet},
-	{"resnet_18","test_Resnet_18",test_Resnet_18},
-	{"gendernet","test_gendernet",test_gendernet},
-	{"ageNet","test_AgeNet",test_AgeNet},
 	{"tinyyolo","tinyyolo",test_TinyYoloNet},
-	{"googleNet","googleNet",test_googleNet},
-	{"test_mnist","test_mnist",test_mnist},
-	{"test_inception","test_inception",test_inception},
 	{"test_mobilenets","test_mobilenets",test_mobilenets},
-	{"test_ssd_googlenet_model","test_ssd_googlenet_model",test_ssd_googlenet_model},
 	{"tiny_yolov2","tiny_yolov2",test_tiny_yolo_v2},
-	{"test_ssd_resnet_model","test_ssd_resnet_model",test_ssd_resnet_model}
 };
 int g_case_count = sizeof(g_testcases) / sizeof(testcase_t);
 
@@ -54,7 +34,7 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "dp_init failed!");
         return ret;
 	}
-        signal(SIGINT,sighandler);
+    signal(SIGINT,sighandler);
 	signal(SIGABRT,sighandler);
 	signal(SIGFPE,sighandler);
 	signal(SIGILL,sighandler);

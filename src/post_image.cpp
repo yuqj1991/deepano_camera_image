@@ -1,5 +1,5 @@
 //
-// Created by chenchen on 11/07/18.
+// Created by yuqianjin on 11/07/18.
 //
 #include "post_image.h"
 extern char **label_cagerioes;
@@ -38,132 +38,6 @@ void POST_IMAGE_MODEL::print_ssd_mobilet_result(void *fathomOutput,Box *box_demo
     free(resultfp32);
 }
 
-void POST_IMAGE_MODEL::print_age_net_result(void *fathomOutput)
-{
-    char *age_list[]={"0-2","4-6","8-12","15-20","25-32","38-43","48-53","60-100"};
-    u16* probabilities=(u16*)fathomOutput;
-    unsigned int resultlen=8;
-    float *resultfp32=(float *)malloc(resultlen*sizeof(*resultfp32));
-    for(u32 i=0;i<resultlen;i++)
-        resultfp32[i]=f16Tof32(probabilities[i]);
-    max_age pre_age = {0,0};
-    for(int i=0;i<resultlen;i++)
-    {
-        if(pre_age.max_predected<=resultfp32[i])
-        {
-            pre_age.max_predected=resultfp32[i];
-            pre_age.index=i;
-        }
-    }
-    printf("the age range is:%s and the confidence of%.2f\n",age_list[pre_age.index],pre_age.max_predected);
-    free(resultfp32);
-}
-
-void POST_IMAGE_MODEL::print_gender_net_result(void *fathomOutput)
-{
-    char *gender_list[]={"Male","Female"};
-    u16* probabilities=(u16*)fathomOutput;
-    unsigned int resultlen=2;
-    float *resultfp32=(float *)malloc(resultlen*sizeof(*resultfp32));
-    for(u32 i=0;i<resultlen;i++)
-        resultfp32[i]=f16Tof32(probabilities[i]);
-    max_age pre_gender = {0,0};
-    for(int i=0;i<resultlen;i++)
-    {
-        if(pre_gender.max_predected<=resultfp32[i])
-        {
-            pre_gender.max_predected=resultfp32[i];
-            pre_gender.index=i;
-        }
-    }
-    printf("the age range is:%s and the confidence of %.2f\n",gender_list[pre_gender.index],pre_gender.max_predected);
-    free(resultfp32);
-}
-
-void POST_IMAGE_MODEL::print_googlenet_result(void *fathomOutput)
-{
-    u16* probabilities=(u16*)fathomOutput;
-    unsigned int resultlen=1000;
-    float *resultfp32=(float *)malloc(resultlen*sizeof(*resultfp32));
-    for(u32 i=0;i<resultlen;i++)
-        resultfp32[i]=f16Tof32(probabilities[i]);
-    float temp_predeiction=0.0;
-    int index_temp=0;
-    for(int i=0;i<5;i++)
-    {
-        temp_predeiction=resultfp32[i];
-        index_temp=i;
-        for(int j=i+1;j<resultlen;j++)
-        {
-            if(temp_predeiction<=resultfp32[j])
-            {
-                temp_predeiction=resultfp32[j];
-                index_temp=j;
-            }
-        }
-        resultfp32[index_temp]=resultfp32[i];
-        resultfp32[i]=temp_predeiction;
-        printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp],temp_predeiction);
-    }
-    free(resultfp32);
-}
-
-void POST_IMAGE_MODEL::print_resnet_result(void *fathomOutput)
-{
-    u16* probabilities=(u16*)fathomOutput;
-    unsigned int resultlen=1000;
-    float *resultfp32=(float *)malloc(resultlen*sizeof(*resultfp32));
-    for(u32 i=0;i<resultlen;i++)
-        resultfp32[i]=f16Tof32(probabilities[i]);
-    float temp_predeiction=0.0;
-    int index_temp=0;
-    for(int i=0;i<5;i++)
-    {
-        temp_predeiction=resultfp32[i];
-        index_temp=i;
-        for(int j=i+1;j<resultlen;j++)
-        {
-            if(temp_predeiction<=resultfp32[j])
-            {
-                temp_predeiction=resultfp32[j];
-                index_temp=j;
-            }
-        }
-        resultfp32[index_temp]=resultfp32[i];
-        resultfp32[i]=temp_predeiction;
-        printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp],temp_predeiction);
-    }
-    free(resultfp32);
-}
-
-void POST_IMAGE_MODEL::print_squeezenet_result(void *fathomOutput)
-{
-    u16* probabilities=(u16*)fathomOutput;
-    unsigned int resultlen=1000;
-    float *resultfp32=(float *)malloc(resultlen*sizeof(*resultfp32));
-    for(u32 i=0;i<resultlen;i++)
-        resultfp32[i]=f16Tof32(probabilities[i]);
-    float temp_predeiction=0.0;
-    int index_temp=0;
-    for(int i=0;i<5;i++)
-    {
-        temp_predeiction=resultfp32[i];
-        index_temp=i;
-        for(int j=i+1;j<resultlen;j++)
-        {
-            if(temp_predeiction<=resultfp32[j])
-            {
-                temp_predeiction=resultfp32[j];
-                index_temp=j;
-            }
-        }
-        resultfp32[index_temp]=resultfp32[i];
-        resultfp32[i]=temp_predeiction;
-        printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp],temp_predeiction);
-    }
-    free(resultfp32);
-}
-
 void POST_IMAGE_MODEL::print_tiny_yolov1_net_result(void *fathomOutput,Box *box_demo,int *num_box_demo)
 {
     u16* probabilities = (u16*)fathomOutput;
@@ -193,63 +67,7 @@ void POST_IMAGE_MODEL::print_tiny_yolov1_net_result(void *fathomOutput,Box *box_
     }
     free(resultfp32);
 }
-void POST_IMAGE_MODEL::print_inception_result(void *fathomOutput)
-{
-    u16* probabilities = (u16*)fathomOutput;
-    unsigned int resultlen=1001;
-    float*resultfp32;
-    resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-    for (u32 i = 0; i < resultlen; i++)
-        resultfp32[i]= f16Tof32(probabilities[i]);
-    float temp_predeiction=0.0;
-    int index_temp=0;
-    for(int i=0;i<5;i++)
-    {
-        temp_predeiction=resultfp32[i];
-        index_temp=i;
-        for(int j=i+1;j<resultlen;j++)
-        {
-            if(temp_predeiction<=resultfp32[j])
-            {
-                temp_predeiction=resultfp32[j];
-                index_temp=j;
-            }
-        }
-        resultfp32[index_temp]=resultfp32[i];
-        resultfp32[i]=temp_predeiction;
-        printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp-2],temp_predeiction);
-    }
-    free(resultfp32);
-}
-void POST_IMAGE_MODEL::print_mnist_net_result(void* fathomOutput)
-{
-    u16* probabilities = (u16*)fathomOutput;
-    char *labels[]={"0","1","2","3","4","5","6","7","8","9"};
-    unsigned int resultlen=10;
-    float*resultfp32;
-    resultfp32=(float*)malloc(resultlen * sizeof(*resultfp32));
-    for (u32 i = 0; i < resultlen; i++)
-        resultfp32[i]= f16Tof32(probabilities[i]);
-    float temp_predeiction=0.0;
-    int index_temp=0;
-    for(int i=0;i<5;i++)
-    {
-        temp_predeiction=resultfp32[i];
-        index_temp=i;
-        for(int j=i+1;j<resultlen;j++)
-        {
-            if(temp_predeiction<=resultfp32[j])
-            {
-                temp_predeiction=resultfp32[j];
-                index_temp=j;
-            }
-        }
-        resultfp32[index_temp]=resultfp32[i];
-        resultfp32[i]=temp_predeiction;
-        printf("prediction classes: %s and the probabilityes:%0.3f\n",labels[index_temp],temp_predeiction);
-    }
-    free(resultfp32);
-}
+
 void POST_IMAGE_MODEL::print_mobilinet_net_result(void *fathomOutput)
 {
     u16* probabilities = (u16*)fathomOutput;
@@ -318,31 +136,4 @@ void POST_IMAGE_MODEL::print_tiny_yolov2_result(void *fathomOutput,Box *box_demo
     }
     free(resultfp32);
     free(new_data);
-}
-void POST_IMAGE_MODEL::print_alexnet_result(void *fathomOutput)
-{
-    u16* probabilities=(u16*)fathomOutput;
-    unsigned int resultlen=1000;
-    float *resultfp32=(float *)malloc(resultlen*sizeof(*resultfp32));
-    for(u32 i=0;i<resultlen;i++)
-        resultfp32[i]=f16Tof32(probabilities[i]);
-    float temp_predeiction=0.0;
-    int index_temp=0;
-    for(int i=0;i<5;i++)
-    {
-        temp_predeiction=resultfp32[i];
-        index_temp=i;
-        for(int j=i+1;j<resultlen;j++)
-        {
-            if(temp_predeiction<=resultfp32[j])
-            {
-                temp_predeiction=resultfp32[j];
-                index_temp=j;
-            }
-        }
-        resultfp32[index_temp]=resultfp32[i];
-        resultfp32[i]=temp_predeiction;
-        printf("prediction classes: %s and the probabilityes:%0.3f\n",label_cagerioes[index_temp],temp_predeiction);
-    }
-    free(resultfp32);
 }

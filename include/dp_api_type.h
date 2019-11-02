@@ -2,95 +2,40 @@
 #define __DP_API_TYPE_H__
 
 #include <stdint.h>
-
+#include "mv_types.h"
 /** \ingroup dp_command_t
 * define dp api command for internal use. User of API should not use them.
 */
 typedef enum {
-	DP_CMD_START_CAM_ONLY = 0,
+	DP_CMD_START_CAM_Neural = 0,
 	DP_CMD_STOP_CAM,
-	DP_CMD_START_CAM_VIDEO,
-
+	DP_CMD_START_CAM_VIDEO_ONLY,
 	//General API
 	DP_CMD_INIT = 48,
 	DP_CMD_UNINIT, //49
 	DP_CMD_PING, //50
-	DP_CMD_GET_VERSION, //51
-	DP_CMD_SET_CAM_CONFIG, //52
-	DP_CMD_GET_CAM_CONFIG, //53
-	DP_CMD_SET_RUNMODE, //54
-	DP_CMD_GET_RUNMODE, //55
-	DP_CMD_UPDATE_MODEL, //56+ncsdk
-	DP_CMD_UPDATE_FIRMWARE, //57
-	DP_CMD_CAPTURE_FRAME, //58
-	DP_CMD_RELEASE_FRAME, //59
-	DP_CMD_UPDATE_MODEL_2,//60+ncsdk
-	DP_CMD_GET_BLOB_PARMS, //61+ncsdk
-	DP_CMD_RECEIVE_BOX_IMAGE, //62
-	DP_CMD_HARDWARE_TEST=65, 
-        DP_CMD_GET_BLOB_MEAN_STD=66,
-	DP_CMD_STOP_PARSE_MODEL=67,
-	DP_CMD_IMAGE_BLOB_SIZE=68,
-	DP_CMD_SECOND_IMG_BUFFER=70,
+	DP_CMD_UPDATE_FIRMWARE, //51
+	//General graph options
+	DP_CMD_SEND_GRAPH_FILE, //52
+	DP_CMD_SEND_GRAPH_PARM, //53
+	DP_CMD_HARDWARE_TEST,  //54
+	DP_CMD_EXIT_PTHREAD=63,
+	//face recognition
+	DP_CMD_CHANGE_FUNCTION_STATE = 69,
+	DP_CMD_FACE_REFISTER_BUFFER = 70,
+	DP_CMD_FACE_REFISTER_CAM = 71,
+	DP_CMD_UPLOAD_FACEDETECTOR=72,
+	DP_CMD_UPLOAD_FACEANGLE=73,
+	DP_CMD_UPLOAD_FACIALMARK=74,
+	DP_CMD_UPLOAD_FACERECOGNITION=75,
+	DP_CMD_FACE_REGISTER_SAVE_FEATURE = 76,
 }dp_command_t;
 
 typedef enum {
 	DP_IND_FRAME = 1,
-	DP_IND_FIRST_RESULT,//cdk
-	DP_IND_SEC_RESULT,//cdk
-        DP_Ddurcallriton_stage,	//cdk	
+	DP_IND_FACE_RESULT = 2,
+	DP_IND_GENERAL_RESULT = 1024,
 }dp_indication_t;
-
-const char * const OP_NAMES[] =
-    {
-        "kConv",                 ///< Convolution
-        "kMaxPool",              ///< Max-Pooling
-        "kAvgPool",              ///< Average-Pooling
-        "kSoftMax",              ///< SoftMax
-        "kFC",                   ///< Fully connected layer
-        "kNone0",                ///< No post operation
-        "kRelu",                 ///< rectified linear unit (Relu) rectifier
-        "kReluX",                ///< rectified linear unit (Relu) rectifier - clamp(0,X)
-        "kDepthConv",            ///< Depthwise Convolution
-        "kBias",                 ///< Bias
-        "kPRelu",                ///< PReLU
-        "kLRN",                  ///< LRN
-        "kSum",                  ///< Sum of input and weight
-        "kProd",                 ///< Prod of input and weight
-        "kMax",                  ///< Max between input and weight
-        "kScale",                ///< Multiply each plane with a multiplier and add a bias
-        "kRelayout",
-        "kSquare",               ///< Square the input
-        "kInnerLRN",             ///< Output = (1 + alpha * input) ^ -beta
-        "kCopy",                 ///< Copy considering input and output strides
-        "kSigmoid",              ///< Sigmoid
-        "kTanh",                 ///< Tanh
-        "kDeconvolution",        ///< Deconvolution a.k.a. Transposed convolution
-        "kElu",                  ///< Exponential linear unit (ELU) rectifier
-        "kReshape",              ///< Reshape
-        "kToPlaneMajor",         ///< Convert from plane major to plane minor
-        "kPower",                ///< Power layer
-        "kCrop",                 ///< Crop layer
-        "kTile",                 ///< Tile layer
-        "kRegionYolo",           ///< Region layer
-        "kReorgYolo",            ///< Reorg layer
-        "kConvert_u8f16",        ///< Convert_u8f16 layer
-        "kConvert_f32f16",       ///< Convert_f32f16 layer
-        "kMyriadXHwConvolution", ///< Reserved for Hardware Ops
-        "kMyriadXHwPooling",     ///< Reserved for Hardware Ops
-        "kMyriadXHwFCL",         ///< Reserved for Hardware Ops
-        "kMyriadXHwPostOps",     ///< Reserved for Hardware Ops
-        "kConvertHwSw",          ///< Convert HW/SW layer
-        "kPermute",              ///< Permute
-        "kNormalize",            ///< Normalize
-        "kPriorBox",             ///< PriorBox
-        "kDetectionOutput",      ///< kDetectionOutput
-        "kLeakyRelu",            ///< LeakyRelu
-        "kSumReduce",			 ///< Sum of channels
-        "kMaxWithConstant"		 ///< Maximum of input and constant
-	"kRsqrt"				 ///< Inverse square root
-	"kScaleWithScalar"		 ///< Multiply tensor by scalar
-    };
 
 	
 /** \ingroup dp_ver_t
@@ -151,41 +96,36 @@ typedef struct dp_img_t {
 *blob model struct
 */
 typedef struct dp_blob_parm_t{
-    int IsTensor_model;            //deault caffe_model value=0;tensorflow=1;
 	int InputSize_width;
 	int InputSize_height;
 	int Output_num;
+    float R_mean;
+    float G_mean;
+    float B_mean;
+	float Std;
 }dp_blob_parm_t;
-/** \ingroup dp_camera_config_t
-* camera configuration structure
-*/
 
 /**\ingroup dp_image_box_t
 send first blob parseing box ponit structure
 */
 typedef struct dp_image_box_t{
-   int x1;
-   int x2;
-   int y1;
-   int y2;
-}dp_image_box_t;
+   int xmin;
+   int xmax;
+   int ymin;
+   int ymax;
+   float yaw;
+   float pitch;
+   float roll;
+   int gender;
+   int boolFaceRecogn;
+   float feature[512];
+}dp_roiBoxInfo;
 
-typedef struct _dp_netMean
+
+typedef struct _FaceResult
 {
-    float R_mean;
-    float G_mean;
-    float B_mean;
-	float Std;
-}dp_netMean;
-
-
-
-typedef struct dp_camera_config_t
-{
-	int width;           /* The width of the camera image. */
-	int height;          /* The width of the camera image. */
-	int fps;             /* The fps(frame per second) of the camera. */
-	int id;              /* The index of the camera. */
-}dp_camera_config_t;
+	dp_roiBoxInfo faceResult[20];
+	int nResult;
+}FaceResult;
 
 #endif
