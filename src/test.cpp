@@ -13,10 +13,8 @@ typedef struct testcase_t {
 testcase_t g_testcases[] =
 {
 	{"ping", NULL, test_ping},
-	{"ssd_mobileNet","test_SSD_MobileNet",test_SSD_MobileNet},
-	{"tinyyolo","tinyyolo",test_TinyYoloNet},
-	{"test_mobilenets","test_mobilenets",test_mobilenets},
-	{"tiny_yolov2","tiny_yolov2",test_tiny_yolo_v2},
+	{"ssd_mobileNet","ssd_mobileNet",test_SSD_MobileNet},
+	{"mobilenet","mobilenet",test_mobilenets},
 };
 int g_case_count = sizeof(g_testcases) / sizeof(testcase_t);
 
