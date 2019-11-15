@@ -1,0 +1,11 @@
+执行命令：sudo ./(应用程序名) test_hongxing_facenet
+model_sample.c test_hongxing_facenet(接口) 传递模型及配置参数，及yolov2和facenet每一个返回结果解析注册函数。读取已有人脸数据信息，人脸数据信息保存在face文件夹，模型文件保存在model文件夹
+
+本版本相较于初始版本有如下更新：
+1）本次更新，双模型共运行时间不到200ms，相较于上次提升一倍，检测效果仅略有下降
+2）本次模型代码更新如下：
+	1、model_sample.c文件在代码注释处有提示不一样，
+	2、模型解析代码变化：原来第一模型结果，是调用video_result_callback.c中的160-212行代码处，调用生成监测框接口是sample_model.print_tiny_yolov2_face_result(result, probs, boxes);而本次修改是采用video_result_callback.c中的273-309行代码处，调用生成监测框接口是sample_model.print_tiny_yolov2_result(result,box_demo,&num_box_demo);
+	3、对print_tiny_yolov2_result进行了修改，该接口在post_image.cpp中的286-324行，以及region.cpp中的注释12行，取消注释13行
+
+3）人脸数据库生成工具，借助不带摄像头的模组，按照deepano_face_pro中的操作说明，编译运行生成人脸数据库
